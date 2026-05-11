@@ -3,8 +3,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useState } from "react";
-import { useAuthStore } from "@/store/authStore"
 import { Users, Package, Truck, AlertCircle } from "lucide-react"
+import { useAuthStore } from "@/store/auth";
 
 export default function SuperAdminDashboard() {
   const stats = [
@@ -13,7 +13,8 @@ export default function SuperAdminDashboard() {
     { label: "Couriers", value: "120", icon: Truck, color: "bg-orange-500" },
     { label: "System Issues", value: "3", icon: AlertCircle, color: "bg-red-500" },
   ]
-const { createAdmin, isLoading, error } = useAuthStore();
+  const {user} = useAuthStore()
+
   const [open, setOpen] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -32,28 +33,12 @@ const { createAdmin, isLoading, error } = useAuthStore();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      await createAdmin(formData);
-        // ✅ Show success alert
-    alert("Admin created successfully!");
-      setOpen(false);
-      setFormData({
-        fullName: "",
-        email: "",
-        phoneNumber: "",
-        companyName: "",
-        address: "",
-        password: "",
-      });
-    } catch {
-      // error handled globally in store
-    }
   };
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Super Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Welcome {user?.fullName.split(" ")[0]}</h1>
         <p className="text-foreground/60">Full platform control and configuration</p>
       </div>
 
@@ -91,97 +76,12 @@ const { createAdmin, isLoading, error } = useAuthStore();
               <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
                 Create Admin
               </Button>
-                 {/* OVERLAY */}
-                   {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-background rounded-lg w-full max-w-md p-6">
-            <h2 className="text-lg font-semibold mb-4">Create Admin</h2>
-
-            <form onSubmit={handleSubmit} className="space-y-3">
-              {error && (
-                <p className="text-sm text-red-500">{error}</p>
-              )}
-
-              <input
-                name="fullName"
-                placeholder="Full Name"
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-                required
-              />
-              <input
-                name="email"
-                type="email"
-                placeholder="Email"
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-                required
-              />
-              <input
-                name="phoneNumber"
-                placeholder="Phone Number"
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-                required
-              />
-              <input
-                name="companyName"
-                placeholder="Company Name"
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-              />
-              <input
-                name="address"
-                placeholder="Address"
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-              />
-              <input
-                name="password"
-                type="password"
-                placeholder="Password"
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-                required
-              />
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? "Creating..." : "Create Admin"}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
             </div>
-            
             <div className="p-4 border border-border rounded-lg hover:shadow-md transition-shadow">
               <h3 className="font-semibold mb-2">Manage Couriers</h3>
               <p className="text-sm text-foreground/60 mb-4">Manage delivery agents and assign shipments</p>
               <Button variant="outline" size="sm">
                 Manage Couriers
-              </Button>
-            </div>
-            <div className="p-4 border border-border rounded-lg hover:shadow-md transition-shadow">
-              <h3 className="font-semibold mb-2">Shipping Configuration</h3>
-              <p className="text-sm text-foreground/60 mb-4">Configure routes, hubs, pricing, and carriers</p>
-              <Button variant="outline" size="sm">
-                Configure
-              </Button>
-            </div>
-            <div className="p-4 border border-border rounded-lg hover:shadow-md transition-shadow">
-              <h3 className="font-semibold mb-2">System Monitoring</h3>
-              <p className="text-sm text-foreground/60 mb-4">View platform performance and issues</p>
-              <Button variant="outline" size="sm">
-                Monitor
               </Button>
             </div>
           </div>

@@ -1,20 +1,19 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eye, EyeOff, Check, X } from "lucide-react"
 import { Navbar } from "@/components/navbar"
-import { useAuthStore } from "@/store/authStore"
-import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { signupCustomer } from "@/lib/auth-api"
 
 export default function SignupPage() {
-   const [infoMessage, setInfoMessage] = useState("")
-   const { register, isLoading, error: authError } = useAuthStore()
+  const [infoMessage, setInfoMessage] = useState("")
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -22,13 +21,14 @@ export default function SignupPage() {
     fullName: "",
     email: "",
     company: "",
-    address:"",
+    address: "",
     phone: "",
     password: "",
     confirmPassword: "",
     acceptTerms: false,
   })
   const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
   const [passwordStrength, setPasswordStrength] = useState(0)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,86 +38,65 @@ export default function SignupPage() {
       [name]: type === "checkbox" ? checked : value,
     }))
     setError("")
-    useAuthStore.setState({ error: null })
 
-    // Calculate password strength
     if (name === "password") {
       let strength = 0
       if (value.length >= 8) strength++
       if (/[a-z]/.test(value) && /[A-Z]/.test(value)) strength++
       if (/\d/.test(value)) strength++
       if (/[^a-zA-Z\d]/.test(value)) strength++
-      console.log("Password strength:", strength)
       setPasswordStrength(strength)
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-      setError("")
-      console.log("REGISTER SUBMITTED") // 👈 ADD THIS
+    setError("")
 
-      // Validate inputs
-      if (!formData.fullName || !formData.email || !formData.password) {
-        setError("Please fill in all required fields")
-    
-        return
+    if (!formData.fullName || !formData.email || !formData.password) {
+      setError("Please fill in all required fields")
+      return
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match")
+      return
+    }
+
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters long")
+      return
+    }
+
+    if (!formData.acceptTerms) {
+      setError("Please accept the terms and conditions")
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const payload = {
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
       }
 
-      if (formData.password !== formData.confirmPassword) {
-        setError("Passwords do not match")
-   
-        return
-      }
-
-      if (formData.password.length < 8) {
-        setError("Password must be at least 8 characters long")
-      
-        return
-      }
-
-      if (!formData.acceptTerms) {
-        setError("Please accept the terms and conditions")
-    
-        return
-      }
-
-   
-   try {
-  console.log("Calling register with:", {
-    fullName: formData.fullName,
-    email: formData.email,
-    company: formData.company,
-    address: formData.address,
-    phone: formData.phone,
-    password: formData.password,
-  })
-
-  const success = await register({
-    fullName: formData.fullName,
-    email: formData.email,
-    companyName: formData.company,
-    address: formData.address,
-    phoneNumber: formData.phone,
-    password: formData.password,
-  })
-
-  console.log("Register response:", success)
-
-  if (success) {
-    router.push("/verify-email")
+      const data = await signupCustomer(payload)
+      toast.success(data.message || "Account created successfully")
+      setInfoMessage("Account created successfully. Check your email to verify your account.")
+      setTimeout(() => router.push("/login"), 1300)
+    } catch (err: any) {
+      const message = err?.message || "Unable to create account."
+      setError(message)
+      toast.error(message)
+    } finally {
+      setIsLoading(false)
+    }
   }
-} catch (err) {
-  console.error("REGISTER FAILED:", err)
-}
-
-
-  
-}
-    
-
-  /*  RESEND VERIFICATION  */
-
 
   const passwordStrengthColor = {
     0: "bg-border",
@@ -130,7 +109,7 @@ export default function SignupPage() {
   return (
     <div>
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-br from-background to-secondary flex items-center justify-center px-4 py-12">
+      <div className="min-h-screen bg-linear-to-br from-background to-secondary flex items-center justify-center px-4 py-12">
         <Card className="w-full max-w-md shadow-lg border-border/50">
           <CardHeader className="space-y-2">
             <CardTitle className="text-2xl">Create Account</CardTitle>
@@ -139,7 +118,6 @@ export default function SignupPage() {
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-3">
-              {/* Full Name */}
               <div className="space-y-2">
                 <label htmlFor="fullName" className="text-sm font-medium text-foreground">
                   Full Name *
@@ -151,12 +129,10 @@ export default function SignupPage() {
                   placeholder="John Doe"
                   value={formData.fullName}
                   onChange={handleChange}
-                  disabled={isLoading}
                   className="bg-background border-border focus:ring-primary"
                 />
               </div>
 
-              {/* Email */}
               <div className="space-y-2">
                 <label htmlFor="email" className="text-sm font-medium text-foreground">
                   Email Address *
@@ -168,12 +144,10 @@ export default function SignupPage() {
                   placeholder="you@example.com"
                   value={formData.email}
                   onChange={handleChange}
-                  disabled={isLoading}
                   className="bg-background border-border focus:ring-primary"
                 />
               </div>
 
-              {/* Company */}
               <div className="space-y-2">
                 <label htmlFor="company" className="text-sm font-medium text-foreground">
                   Company Name
@@ -185,14 +159,12 @@ export default function SignupPage() {
                   placeholder="Your Company"
                   value={formData.company}
                   onChange={handleChange}
-                  disabled={isLoading}
                   className="bg-background border-border focus:ring-primary"
                 />
               </div>
 
-               {/* Address */}
               <div className="space-y-2">
-                <label htmlFor="company" className="text-sm font-medium text-foreground">
+                <label htmlFor="address" className="text-sm font-medium text-foreground">
                   Address
                 </label>
                 <Input
@@ -202,12 +174,10 @@ export default function SignupPage() {
                   placeholder="Your Address"
                   value={formData.address}
                   onChange={handleChange}
-                  disabled={isLoading}
                   className="bg-background border-border focus:ring-primary"
                 />
               </div>
 
-              {/* Phone */}
               <div className="space-y-2">
                 <label htmlFor="phone" className="text-sm font-medium text-foreground">
                   Phone Number
@@ -219,12 +189,10 @@ export default function SignupPage() {
                   placeholder="+234 800 000 0000"
                   value={formData.phone}
                   onChange={handleChange}
-                  disabled={isLoading}
                   className="bg-background border-border focus:ring-primary"
                 />
               </div>
 
-              {/* Password */}
               <div className="space-y-2">
                 <label htmlFor="password" className="text-sm font-medium text-foreground">
                   Password *
@@ -237,7 +205,6 @@ export default function SignupPage() {
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={handleChange}
-                    disabled={isLoading}
                     className="bg-background border-border focus:ring-primary pr-10"
                   />
                   <button
@@ -248,7 +215,6 @@ export default function SignupPage() {
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
-                {/* Password Strength Indicator */}
                 <div className="space-y-1">
                   <div className="flex gap-1">
                     {[1, 2, 3, 4].map((i) => (
@@ -272,7 +238,6 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              {/* Confirm Password */}
               <div className="space-y-2">
                 <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
                   Confirm Password *
@@ -285,7 +250,6 @@ export default function SignupPage() {
                     placeholder="••••••••"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    disabled={isLoading}
                     className="bg-background border-border focus:ring-primary pr-10"
                   />
                   <button
@@ -300,8 +264,8 @@ export default function SignupPage() {
                   <div className="flex items-center gap-2 text-xs">
                     {formData.password === formData.confirmPassword ? (
                       <>
-                        <Check className="w-4 h-4 text-primary" />
-                        <span className="text-primary">Passwords match</span>
+                        <Check className="w-4 h-4 text-green-600" />
+                        <span className="text-green-600">Passwords match</span>
                       </>
                     ) : (
                       <>
@@ -313,7 +277,6 @@ export default function SignupPage() {
                 )}
               </div>
 
-              {/* Terms Checkbox */}
               <div className="flex items-start gap-2 pt-2">
                 <input
                   id="acceptTerms"
@@ -321,7 +284,6 @@ export default function SignupPage() {
                   type="checkbox"
                   checked={formData.acceptTerms}
                   onChange={handleChange}
-                  disabled={isLoading}
                   className="mt-1 w-4 h-4 border border-border rounded bg-background cursor-pointer accent-primary"
                 />
                 <label htmlFor="acceptTerms" className="text-sm text-muted-foreground cursor-pointer">
@@ -336,15 +298,16 @@ export default function SignupPage() {
                 </label>
               </div>
 
-              {/* Error Message */}
-             {(error || authError) && (
-                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md text-sm text-destructive">
-                  {error || authError}
+              {(error || infoMessage) && (
+                <div
+                  className={`p-3 rounded-md text-sm ${
+                    error ? "bg-destructive/10 border border-destructive/20 text-destructive" : "bg-green-100 border border-green-200 text-green-900"
+                  }`}
+                >
+                  {error || infoMessage}
                 </div>
               )}
 
-
-              {/* Submit Button */}
               <Button
                 type="submit"
                 disabled={isLoading}
@@ -354,7 +317,6 @@ export default function SignupPage() {
               </Button>
             </form>
 
-            {/* Sign In Link */}
             <div className="mt-6 text-center text-sm text-muted-foreground">
               Already have an account?{" "}
               <Link href="/login" className="text-primary font-medium hover:underline">

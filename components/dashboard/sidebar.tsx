@@ -16,11 +16,14 @@ const customerMenuItems = [
 const superAdminMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/super-admin/dashboard" },
   { icon: Users, label: "Manage Admins", href: "/super-admin/manage-admins" },
+  { icon: Users, label: "Manage Operation Staffs", href: "/super-admin/manage-staff" },
   { icon: Truck, label: "Manage Couriers", href: "/super-admin/manage-couriers" },
+  { icon: Users, label: "Customers", href: "/super-admin/customers" },
   // { icon: MapPin, label: "Shipping Config", href: "/super-admin/shipping-config" },
   // { icon: ShoppingCart, label: "Carriers", href: "/super-admin/carriers" },
   { icon: Package, label: "All Shipments", href: "/super-admin/shipments" },
   { icon: FileText, label: "Manage Blog", href: "/super-admin/blog" },
+
   // { icon: BarChart3, label: "Reports", href: "/super-admin/reports" },
   // { icon: Settings, label: "System Settings", href: "/super-admin/settings" },
 ]
