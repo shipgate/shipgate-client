@@ -139,16 +139,16 @@ export default function LoginPage() {
                 {isLoading ? "Signing in..." : "Sign In"}
               </Button>
 
-              <div className="relative my-4">
+              {/* <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-border"></div>
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
                 </div>
-              </div>
+              </div> */}
 
-              <div className="flex space-x-4">
+              {/* <div className="flex space-x-4">
                 <Button
                   variant="outline"
                   className="flex-1 bg-background border-border hover:bg-black/30 hover:border-black/30 h-10 cursor-pointer"
@@ -161,7 +161,7 @@ export default function LoginPage() {
                 >
                   <img src="/apple.png" alt="Apple" className="w-4 h-4 mr-2" /> Apple
                 </Button>
-              </div>
+              </div> */}
             </form>
 
             <div className="mt-6 text-center text-sm text-muted-foreground">

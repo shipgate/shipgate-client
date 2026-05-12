@@ -9,9 +9,17 @@ import { Trash2, Plus, Mail } from "lucide-react"
 import { toast } from "sonner"
 import { useAuthStore } from "@/store/auth"
 import { getUsers, deleteUser, addAdmin } from "@/lib/auth-api"
+import { ConfirmationDialog } from "@/components/confirm-dialog"
+import { LoadingSpinner } from "@/components/loading-spinner"
 import type { AuthUser } from "@/store/auth"
 
-/* ================= COMPONENT ================= */
+interface ConfirmDialogState {
+  open: boolean
+  id: string
+  title: string
+  message: string
+  actionText: string
+}
 
 export default function ManageAdmins() {
   const { token } = useAuthStore()
@@ -19,6 +27,14 @@ export default function ManageAdmins() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
+    open: false,
+    id: "",
+    title: "",
+    message: "",
+    actionText: "Delete admin",
+  })
 
   const [newAdmin, setNewAdmin] = useState({
     fullName: "",
@@ -60,15 +76,18 @@ export default function ManageAdmins() {
 
     setSubmitting(true)
     try {
-      await addAdmin({
-        fullName: newAdmin.fullName,
-        email: newAdmin.email,
-        phone: newAdmin.phone,
-        address: newAdmin.address,
-        password: newAdmin.password,
-        confirmPassword: newAdmin.confirmPassword,
-        department: newAdmin.department || undefined,
-      }, token!)
+      await addAdmin(
+        {
+          fullName: newAdmin.fullName,
+          email: newAdmin.email,
+          phone: newAdmin.phone,
+          address: newAdmin.address,
+          password: newAdmin.password,
+          confirmPassword: newAdmin.confirmPassword,
+          department: newAdmin.department || undefined,
+        },
+        token!
+      )
       toast.success("Admin added successfully")
       setNewAdmin({
         fullName: "",
@@ -88,20 +107,24 @@ export default function ManageAdmins() {
     }
   }
 
-  const handleDeleteAdmin = async (adminId: string) => {
-    if (!confirm("Are you sure you want to delete this admin?")) return
+  const handleConfirmDelete = async () => {
+    if (!confirmDialog.id) return
 
+    setIsDeleting(true)
     try {
-      await deleteUser(adminId, token!)
+      await deleteUser(confirmDialog.id, token!)
       toast.success("Admin deleted successfully")
       fetchAdmins()
     } catch (err: any) {
       toast.error(err.message || "Failed to delete admin")
+    } finally {
+      setIsDeleting(false)
+      setConfirmDialog({ open: false, id: "", title: "", message: "", actionText: "Delete admin" })
     }
   }
 
   if (loading) {
-    return <div className="flex justify-center items-center h-64">Loading...</div>
+    return <LoadingSpinner label="Loading admins..." />
   }
 
   return (
@@ -242,7 +265,15 @@ export default function ManageAdmins() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteAdmin(admin._id)}
+                        onClick={() =>
+                          setConfirmDialog({
+                            open: true,
+                            id: admin._id,
+                            title: "Delete admin",
+                            message: `Delete ${admin.fullName}? This cannot be undone.`,
+                            actionText: "Delete admin",
+                          })
+                        }
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -255,6 +286,17 @@ export default function ManageAdmins() {
           </div>
         </CardContent>
       </Card>
+
+      <ConfirmationDialog
+        open={confirmDialog.open}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.actionText}
+        isProcessing={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDialog({ open: false, id: "", title: "", message: "", actionText: "Delete admin" })}
+      />
     </div>
   )
 }
+

@@ -9,7 +9,17 @@ import { Trash2, Plus, Mail, Phone, MapPin } from "lucide-react"
 import { toast } from "sonner"
 import { useAuthStore } from "@/store/auth"
 import { getUsers, deleteUser, addCourier } from "@/lib/auth-api"
+import { ConfirmationDialog } from "@/components/confirm-dialog"
+import { LoadingSpinner } from "@/components/loading-spinner"
 import type { AuthUser } from "@/store/auth"
+
+interface ConfirmDialogState {
+  open: boolean
+  id: string
+  title: string
+  message: string
+  actionText: string
+}
 
 export default function ManageCouriers() {
   const { token } = useAuthStore()
@@ -17,6 +27,14 @@ export default function ManageCouriers() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
+    open: false,
+    id: "",
+    title: "",
+    message: "",
+    actionText: "Delete courier",
+  })
 
   const [newCourier, setNewCourier] = useState({
     fullName: "",
@@ -89,20 +107,24 @@ export default function ManageCouriers() {
     }
   }
 
-  const handleDeleteCourier = async (courierId: string) => {
-    if (!confirm("Are you sure you want to delete this courier?")) return
+  const handleConfirmDelete = async () => {
+    if (!confirmDialog.id) return
 
+    setIsDeleting(true)
     try {
-      await deleteUser(courierId, token!)
+      await deleteUser(confirmDialog.id, token!)
       toast.success("Courier deleted successfully")
       fetchCouriers()
     } catch (err: any) {
       toast.error(err.message || "Failed to delete courier")
+    } finally {
+      setIsDeleting(false)
+      setConfirmDialog({ open: false, id: "", title: "", message: "", actionText: "Delete courier" })
     }
   }
 
   if (loading) {
-    return <div className="flex justify-center items-center h-64">Loading...</div>
+    return <LoadingSpinner label="Loading couriers..." />
   }
 
   return (
@@ -270,7 +292,15 @@ export default function ManageCouriers() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteCourier(courier._id)}
+                        onClick={() =>
+                          setConfirmDialog({
+                            open: true,
+                            id: courier._id,
+                            title: "Delete courier",
+                            message: `Delete ${courier.fullName}? This cannot be undone.`,
+                            actionText: "Delete courier",
+                          })
+                        }
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -283,6 +313,16 @@ export default function ManageCouriers() {
           </div>
         </CardContent>
       </Card>
+
+      <ConfirmationDialog
+        open={confirmDialog.open}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.actionText}
+        isProcessing={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDialog({ open: false, id: "", title: "", message: "", actionText: "Delete courier" })}
+      />
     </div>
   )
 }

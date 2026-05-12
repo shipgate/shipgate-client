@@ -9,7 +9,17 @@ import { Trash2, Plus, Mail, Phone, MapPin } from "lucide-react"
 import { toast } from "sonner"
 import { useAuthStore } from "@/store/auth"
 import { getUsers, deleteUser, addStaff } from "@/lib/auth-api"
+import { ConfirmationDialog } from "@/components/confirm-dialog"
+import { LoadingSpinner } from "@/components/loading-spinner"
 import type { AuthUser } from "@/store/auth"
+
+interface ConfirmDialogState {
+  open: boolean
+  id: string
+  title: string
+  message: string
+  actionText: string
+}
 
 export default function ManageStaff() {
   const { token } = useAuthStore()
@@ -17,6 +27,14 @@ export default function ManageStaff() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
+    open: false,
+    id: "",
+    title: "",
+    message: "",
+    actionText: "Delete staff",
+  })
 
   const [newStaff, setNewStaff] = useState({
     fullName: "",
@@ -92,20 +110,24 @@ export default function ManageStaff() {
     }
   }
 
-  const handleDeleteStaff = async (staffId: string) => {
-    if (!confirm("Are you sure you want to delete this staff member?")) return
+  const handleConfirmDelete = async () => {
+    if (!confirmDialog.id) return
 
+    setIsDeleting(true)
     try {
-      await deleteUser(staffId, token!)
+      await deleteUser(confirmDialog.id, token!)
       toast.success("Staff member deleted successfully")
       fetchStaff()
     } catch (err: any) {
       toast.error(err.message || "Failed to delete staff member")
+    } finally {
+      setIsDeleting(false)
+      setConfirmDialog({ open: false, id: "", title: "", message: "", actionText: "Delete staff" })
     }
   }
 
   if (loading) {
-    return <div className="flex justify-center items-center h-64">Loading...</div>
+    return <LoadingSpinner label="Loading staff..." />
   }
 
   return (
@@ -279,7 +301,15 @@ export default function ManageStaff() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteStaff(member._id)}
+                        onClick={() =>
+                          setConfirmDialog({
+                            open: true,
+                            id: member._id,
+                            title: "Delete staff member",
+                            message: `Delete ${member.fullName}? This cannot be undone.`,
+                            actionText: "Delete staff",
+                          })
+                        }
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -292,6 +322,16 @@ export default function ManageStaff() {
           </div>
         </CardContent>
       </Card>
+
+      <ConfirmationDialog
+        open={confirmDialog.open}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.actionText}
+        isProcessing={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDialog({ open: false, id: "", title: "", message: "", actionText: "Delete staff" })}
+      />
     </div>
   )
 }
