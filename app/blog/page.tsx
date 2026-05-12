@@ -1,6 +1,4 @@
-"use client"
-
-import { useState } from "react"
+import { Metadata } from "next"
 import { Navbar } from "@/components/navbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,98 +6,92 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Search, Calendar, User, ArrowRight } from "lucide-react"
 import Link from "next/link"
+import { NewsletterSubscription } from "@/components/newsletter-subscription"
+import { getBlogPosts } from "@/lib/blog-api"
 
-const blogPosts = [
-  {
-    id: 1,
-    slug: "tips-optimal-packaging",
-    title: "Tips for Optimal Packaging: Ensure Safe Delivery",
-    excerpt:
-      "Learn the best practices for packaging your items to prevent damage during transit from China to Nigeria.",
-    content:
-      "Proper packaging is crucial for safe delivery. Use quality materials, add protective layers, and ensure correct weight distribution.",
-    author: "John Smith",
-    date: "2025-11-07",
-    category: "Packaging",
-    image: "/shipping-packaging.jpg",
-    readTime: "5 min read",
+export const metadata: Metadata = {
+  title: "Blog & Resources | Shipgate - Shipping from China to Nigeria",
+  description:
+    "Expert tips, guides, and updates about shipping from China to Nigeria. Learn about packaging, customs, insurance, and logistics best practices.",
+  keywords: [
+    "shipping blog",
+    "logistics guide",
+    "china nigeria shipping",
+    "customs documentation",
+    "packaging tips",
+    "shipping insurance",
+  ],
+  openGraph: {
+    title: "Blog & Resources | Shipgate",
+    description: "Expert tips and guides for shipping from China to Nigeria",
+    type: "website",
+    url: "https://shipgate.ng/blog",
+    images: [
+      {
+        url: "https://shipgate.ng/og-blog.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Shipgate Blog",
+      },
+    ],
   },
-  {
-    id: 2,
-    slug: "air-vs-sea-shipping",
-    title: "Air vs Sea Shipping: Which One is Right for You?",
-    excerpt: "Compare air and sea shipping options to make the best choice for your business needs and budget.",
-    content:
-      "Air shipping is faster but more expensive. Sea shipping is economical for large volumes. Consider your timeline and volume requirements.",
-    author: "Sarah Johnson",
-    date: "2025-11-05",
-    category: "Shipping Guide",
-    image: "/airport-cargo-logistics.jpg",
-    readTime: "7 min read",
+  twitter: {
+    card: "summary_large_image",
+    title: "Blog & Resources | Shipgate",
+    description: "Expert tips and guides for shipping from China to Nigeria",
+    images: ["https://shipgate.ng/og-blog.jpg"],
   },
-  {
-    id: 3,
-    slug: "customs-documentation-guide",
-    title: "Complete Guide to Customs Documentation",
-    excerpt:
-      "Everything you need to know about customs forms, HS codes, and required documentation for China-Nigeria shipments.",
-    content:
-      "We handle all customs documentation for you. Ensure accurate HS codes and proper declarations to avoid delays.",
-    author: "Michael Chen",
-    date: "2025-11-03",
-    category: "Customs",
-    image: "/customs-border-checkpoint.jpg",
-    readTime: "8 min read",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-snippet": -1,
+      "max-image-preview": "large",
+      "max-video-preview": -1,
+    },
   },
-  {
-    id: 4,
-    slug: "track-your-shipment-real-time",
-    title: "How to Track Your Shipment in Real-Time",
-    excerpt:
-      "Step-by-step guide on using our tracking system to monitor your package from China warehouse to Nigeria delivery.",
-    content:
-      "Use your tracking number on our website or mobile app to get live updates. You'll see every checkpoint in the journey.",
-    author: "Emily Davis",
-    date: "2025-11-01",
-    category: "Tutorial",
-    image: "/gps-tracking-location.jpg",
-    readTime: "4 min read",
+  alternates: {
+    canonical: "https://shipgate.ng/blog",
   },
-  {
-    id: 5,
-    slug: "insurance-coverage-explained",
-    title: "Understanding Insurance Coverage for Your Shipments",
-    excerpt:
-      "Comprehensive explanation of what's covered under our standard insurance and how to file claims if needed.",
-    content:
-      "All shipments include basic insurance. Additional coverage available for high-value items. File claims within 30 days of delivery.",
-    author: "David Wilson",
-    date: "2025-10-30",
-    category: "Insurance",
-    image: "/insurance-protection-coverage.jpg",
-    readTime: "6 min read",
-  },
-  {
-    id: 6,
-    slug: "exchange-rates-impact",
-    title: "Understanding Exchange Rates and Pricing",
-    excerpt:
-      "Learn how USD-NGN and CNY-NGN exchange rates affect your shipping costs and how to optimize your expenses.",
-    content:
-      "Exchange rates fluctuate daily. Lock in rates when favorable. Our pricing is transparent and competitive.",
-    author: "Lisa Anderson",
-    date: "2025-10-28",
-    category: "Pricing",
-    image: "/currency-exchange-rates.jpg",
-    readTime: "5 min read",
-  },
-]
+}
 
-export default function BlogPage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+interface BlogPost {
+  _id: string
+  title: string
+  slug: string
+  category: string
+  author: {
+    _id: string
+    fullName: string
+    email: string
+  }
+  excerpt: string
+  content?: string
+  image?: string
+  status: "draft" | "published"
+  publishedAt?: string
+  createdAt: string
+  updatedAt: string
+}
 
-  const filteredPosts = blogPosts.filter((post) => {
+interface SearchParams {
+  page?: string
+  category?: string
+  search?: string
+}
+
+export default async function BlogPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const params = await searchParams
+  const page = parseInt(params.page || "1")
+  const selectedCategory = params.category
+  const searchTerm = params.search || ""
+
+  const { posts, pagination } = await getBlogPosts(page, 10)
+
+  // Filter posts client-side for search and category (in production, use API filters)
+  const filteredPosts = posts.filter((post: BlogPost) => {
     const matchesSearch =
       post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       post.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
@@ -107,10 +99,38 @@ export default function BlogPage() {
     return matchesSearch && matchesCategory
   })
 
-  const categories = Array.from(new Set(blogPosts.map((p) => p.category)))
+  // Get unique categories
+  const categories = Array.from(new Set(posts.map((p: BlogPost) => p.category)))
+
+  // Structured Data (JSON-LD)
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    name: "Shipgate Blog",
+    description:
+      "Expert tips and guides for shipping from China to Nigeria",
+    url: "https://shipgate.ng/blog",
+    image: "https://shipgate.ng/og-blog.jpg",
+    blogPost: filteredPosts.map((post: BlogPost) => ({
+      "@type": "BlogPosting",
+      headline: post.title,
+      description: post.excerpt,
+      image: post.image,
+      datePublished: post.publishedAt || post.createdAt,
+      author: {
+        "@type": "Person",
+        name: post.author?.fullName,
+      },
+      url: `https://shipgate.ng/blog/${post.slug}`,
+    })),
+  }
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <Navbar />
       <main className="min-h-screen bg-muted/30 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
@@ -132,36 +152,36 @@ export default function BlogPage() {
                   <Input
                     type="text"
                     placeholder="Search articles..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    defaultValue={searchTerm}
                     className="pl-10 h-11"
                   />
                 </div>
 
                 {/* Categories */}
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setSelectedCategory(null)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                      selectedCategory === null
-                        ? "bg-primary text-white"
-                        : "bg-white border border-border text-foreground hover:border-primary"
-                    }`}
-                  >
-                    All Articles
-                  </button>
-                  {categories.map((category) => (
+                  <Link href="/blog">
                     <button
-                      key={category}
-                      onClick={() => setSelectedCategory(category)}
                       className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                        selectedCategory === category
+                        !selectedCategory
                           ? "bg-primary text-white"
                           : "bg-white border border-border text-foreground hover:border-primary"
                       }`}
                     >
-                      {category}
+                      All Articles
                     </button>
+                  </Link>
+                  {categories.map((category) => (
+                    <Link key={category} href={`/blog?category=${category}`}>
+                      <button
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                          selectedCategory === category
+                            ? "bg-primary text-white"
+                            : "bg-white border border-border text-foreground hover:border-primary"
+                        }`}
+                      >
+                        {category}
+                      </button>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -171,85 +191,87 @@ export default function BlogPage() {
           {/* Blog Posts Grid */}
           <div className="space-y-6">
             {filteredPosts.length > 0 ? (
-              filteredPosts.map((post) => (
-                <Link key={post.id} href={`/blog/${post.slug}`}>
-                  <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-                    <div className="grid md:grid-cols-4 h-full">
-                      {/* Image */}
-                      <div className="relative md:h-auto h-48 bg-muted overflow-hidden rounded-t-lg md:rounded-l-lg md:rounded-t-none">
-                        <img
-                          src={post.image || "/placeholder.svg"}
-                          alt={post.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-
-                      {/* Content */}
-                      <CardContent className="md:col-span-3 pt-6 pb-6">
-                        <div className="flex flex-col justify-between h-full">
-                          <div>
-                            <div className="flex items-center gap-2 mb-3">
-                              <Badge className="bg-primary/10 text-primary hover:bg-primary/20">{post.category}</Badge>
-                              <span className="text-xs text-foreground/60">{post.readTime}</span>
-                            </div>
-
-                            <h3 className="text-xl font-bold text-foreground mb-2 line-clamp-2">{post.title}</h3>
-
-                            <p className="text-foreground/70 text-sm mb-4 line-clamp-2">{post.excerpt}</p>
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4 text-xs text-foreground/60">
-                              <div className="flex items-center gap-1">
-                                <User className="w-4 h-4" />
-                                {post.author}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Calendar className="w-4 h-4" />
-                                {new Date(post.date).toLocaleDateString()}
-                              </div>
-                            </div>
-                            <ArrowRight className="w-5 h-5 text-primary" />
-                          </div>
+              filteredPosts.map((post: BlogPost) => (
+                <Link key={post._id} href={`/blog/${post.slug}`}>
+                  <article className="block">
+                    <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                      <div className="grid md:grid-cols-4 h-full">
+                        {/* Image */}
+                        <div className="relative md:h-auto h-48 bg-muted overflow-hidden rounded-t-lg md:rounded-l-lg md:rounded-t-none">
+                          <img
+                            src={post.image || "/placeholder.svg"}
+                            alt={post.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
                         </div>
-                      </CardContent>
-                    </div>
-                  </Card>
+
+                        {/* Content */}
+                        <CardContent className="md:col-span-3 pt-6 pb-6">
+                          <div className="flex flex-col justify-between h-full">
+                            <div>
+                              <div className="flex items-center gap-2 mb-3">
+                                <Badge className="bg-primary/10 text-primary hover:bg-primary/20">{post.category}</Badge>
+                              </div>
+
+                              <h2 className="text-xl font-bold text-foreground mb-2 line-clamp-2">{post.title}</h2>
+
+                              <p className="text-foreground/70 text-sm mb-4 line-clamp-2">{post.excerpt}</p>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4 text-xs text-foreground/60">
+                                <div className="flex items-center gap-1">
+                                  <User className="w-4 h-4" />
+                                  {post.author?.fullName}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="w-4 h-4" />
+                                  {new Date(post.publishedAt || post.createdAt).toLocaleDateString()}
+                                </div>
+                              </div>
+                              <ArrowRight className="w-5 h-5 text-primary" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </div>
+                    </Card>
+                  </article>
                 </Link>
               ))
             ) : (
               <Card>
                 <CardContent className="pt-12 text-center pb-12">
                   <p className="text-foreground/60 mb-4">No articles found matching your search.</p>
-                  <Button
-                    onClick={() => {
-                      setSearchTerm("")
-                      setSelectedCategory(null)
-                    }}
-                    variant="outline"
-                  >
-                    Clear Filters
-                  </Button>
+                  <Link href="/blog">
+                    <Button variant="outline">Clear Filters</Button>
+                  </Link>
                 </CardContent>
               </Card>
             )}
           </div>
 
+          {/* Pagination */}
+          {pagination.pages > 1 && (
+            <div className="mt-8 flex justify-center gap-2">
+              {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((p) => (
+                <Link key={p} href={`/blog?page=${p}`}>
+                  <Button
+                    variant={page === p ? "default" : "outline"}
+                    size="sm"
+                    className={page === p ? "bg-primary" : ""}
+                  >
+                    {p}
+                  </Button>
+                </Link>
+              ))}
+            </div>
+          )}
+
           {/* Newsletter Section */}
-          <Card className="mt-16 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-            <CardContent className="pt-8">
-              <div className="text-center">
-                <h3 className="text-2xl font-bold text-foreground mb-2">Stay Updated</h3>
-                <p className="text-foreground/70 mb-6 max-w-md mx-auto">
-                  Subscribe to get the latest shipping tips, fee updates, and exchange rate alerts.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto">
-                  <Input type="email" placeholder="your@email.com" className="h-12" />
-                  <Button className="bg-primary hover:bg-primary/90 text-white px-8 h-12">Subscribe</Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="mt-16">
+            <NewsletterSubscription />
+          </div>
         </div>
       </main>
     </>

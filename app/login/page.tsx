@@ -12,6 +12,7 @@ import { Navbar } from "@/components/navbar"
 import { toast } from "sonner"
 import { authenticateUser } from "@/lib/auth-api"
 import { useAuthStore } from "@/store/auth"
+import { setAuthCookie, setUserRoleCookie } from "@/lib/cookies"
 
 const getRedirectPath = (userType: string) => {
   switch (userType) {
@@ -56,6 +57,11 @@ export default function LoginPage() {
     try {
       const data = await authenticateUser(formData)
       setAuth(data.user, data.token)
+      
+      // Set cookies for middleware
+      setAuthCookie(data.token)
+      setUserRoleCookie(data.user.userType)
+      
       toast.success(data.message || "Logged in successfully")
       router.push(getRedirectPath(data.user.userType))
     } catch (err: any) {
