@@ -2,15 +2,20 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Globe, Plane, Ship } from "lucide-react"
+import { isAirShipment } from "@/lib/shipment-helpers"
 
 interface TrackingMapProps {
   origin: string
   destination: string
   status: string
-  shippingType: "air" | "sea"
+  shipmentMethod?: string
+  shippingType?: "air" | "sea"
 }
 
-export function TrackingMap({ origin, destination, status, shippingType }: TrackingMapProps) {
+export function TrackingMap({ origin, destination, status, shipmentMethod, shippingType }: TrackingMapProps) {
+  // Determine if it's air or sea based on shipmentMethod first, fallback to shippingType
+  const isAir = shipmentMethod ? isAirShipment(shipmentMethod) : shippingType === "air"
+
   return (
     <Card className="mb-8">
       <CardHeader>
@@ -36,16 +41,10 @@ export function TrackingMap({ origin, destination, status, shippingType }: Track
               {/* Arrow/Route */}
               <div className="flex-1 mx-4 flex flex-col items-center">
                 <div className="flex items-center gap-1 mb-2">
-                  {shippingType === "air" ? (
-                    <Plane className="w-5 h-5 text-primary" />
-                  ) : (
-                    <Ship className="w-5 h-5 text-primary" />
-                  )}
+                  {isAir ? <Plane className="w-5 h-5 text-primary" /> : <Ship className="w-5 h-5 text-primary" />}
                 </div>
-                <div className="w-full h-1 bg-gradient-to-r from-primary to-primary/50 rounded-full"></div>
-                <p className="text-xs text-foreground/60 mt-2 font-semibold">
-                  {shippingType === "air" ? "Flying" : "Sailing"}
-                </p>
+                <div className="w-full h-1 bg-linear-to-r from-primary to-primary/50 rounded-full"></div>
+                <p className="text-xs text-foreground/60 mt-2 font-semibold">{isAir ? "Flying" : "Sailing"}</p>
               </div>
 
               {/* Destination */}
@@ -62,7 +61,7 @@ export function TrackingMap({ origin, destination, status, shippingType }: Track
           {/* Route details */}
           <div className="space-y-2">
             <p className="text-sm font-semibold text-foreground">Route Details:</p>
-            {shippingType === "air" ? (
+            {isAir ? (
               <ul className="text-xs text-foreground/70 space-y-1 list-disc list-inside">
                 <li>Warehouse → China Airport</li>
                 <li>Customs clearance</li>
@@ -83,3 +82,4 @@ export function TrackingMap({ origin, destination, status, shippingType }: Track
     </Card>
   )
 }
+

@@ -38,7 +38,7 @@ export default function SuperAdminDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Welcome {user?.fullName.split(" ")[0]}</h1>
+        <h1 className="text-3xl font-medium text-gray-700 mb-2">Good Morning, <span className="font-bold text-foreground">{user?.fullName.split(" ")[0].toLocaleUpperCase()}</span></h1>
         <p className="text-foreground/60">Full platform control and configuration</p>
       </div>
 

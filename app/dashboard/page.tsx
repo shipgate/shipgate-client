@@ -8,12 +8,28 @@ import { RecentShipments } from "@/components/dashboard/recent-shipments"
 import { QuickStats } from "@/components/dashboard/quick-stats"
 import { Plus } from "lucide-react"
 import { motion } from "motion/react"
+import { useTypewriter } from "react-simple-typewriter"
+import { useAuthStore } from "@/store/auth"
 
 
 export default function DashboardPage() {
   const [walletBalance] = useState(2500.0)
   const [shipmentCount] = useState(12)
   const [totalSpent] = useState(8450.5)
+  const [text, count] = useTypewriter({
+    words: [
+        "Here's your shipping overview.",
+        "What do you want to ship today?",
+        "We deliver straight to your doorstep.",
+        "Track your shipments in real-time.",
+    ],
+    loop: true,
+    delaySpeed: 2000,
+    typeSpeed: 10,
+    deleteSpeed: 30,
+  })
+
+  const {user} = useAuthStore()
 
   return (
     <div className="space-y-6">
@@ -23,8 +39,8 @@ export default function DashboardPage() {
         initial={{x: -20, opacity: 0}}
         animate={{x:0, opacity: 1}}
         >
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Welcome back, Victor</h1>
-          <p className="text-foreground/60 text-sm md:text-base">Here's your shipping overview</p>
+          <h1 className="text-3xl font-medium text-gray-700 mb-2">Good Morning, <span className="font-bold text-foreground">{user?.fullName.split(" ")[0].toLocaleUpperCase()}</span></h1>
+          <p className="text-foreground/60 text-sm md:text-base">{text}</p>
         </motion.div>
         <motion.a 
         href="/dashboard/add-shipment"

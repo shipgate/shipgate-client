@@ -2,8 +2,10 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Package, Calculator, FileText, Settings, MessageSquare, LogOut, Users, Truck, MapPin, ShoppingCart, BarChart3, Bell } from "lucide-react"
+import { LayoutDashboard, Package, Calculator, FileText, Settings, MessageSquare, LogOut, Users, Truck, MapPin, ShoppingCart, BarChart3, Bell, ArrowRightCircle, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
+import { useAuthStore } from "@/store/auth"
 
 const customerMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -70,8 +72,10 @@ export function Sidebar({userRole = "customer"}: {userRole?: string}) {
 
   const menuItems = getMenuItems()
 
+  const {user} = useAuthStore()
+
   return (
-    <aside className="w-64 bg-white border-r border-border h-full">
+    <aside className="w-64 bg-[#f6f7fa]  h-full">
       <div className="p-6 space-y-8">
         {/* Menu Items */}
         <nav className="space-y-2">
@@ -98,8 +102,12 @@ export function Sidebar({userRole = "customer"}: {userRole?: string}) {
         <div className="border-t border-border pt-6">
           <a href="/">
             <button className="flex items-center gap-3 px-4 py-3 w-full text-foreground hover:bg-muted rounded-lg transition-colors">
-              <LogOut className="w-5 h-5" />
-              Logout
+              <Avatar>
+                <AvatarImage src="https://github.com/shadcn.png" />
+                <AvatarFallback>{user?.fullName.charAt(0)}{user?.fullName.split(" ")[1].charAt(0)}</AvatarFallback>
+              </Avatar>
+              <span>{user?.fullName.split(" ")[0]}</span>
+              <LogOut className="w-5 h-5 ml-auto text-muted-foreground" />
             </button>
           </a>
         </div>

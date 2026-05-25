@@ -178,3 +178,33 @@ export async function getAdminBlogPosts(
     return { posts: [], pagination: { page, limit, total: 0, pages: 0 } }
   }
 }
+
+export async function getBlogPost(
+  postId: string,
+  token: string
+): Promise<{
+  success: boolean
+  message: string
+  data?: BlogPost
+}> {
+  try {
+    const response = await fetch(`${API}/api/v1/blog/${postId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to fetch blog post")
+    }
+
+    return { success: true, message: "Blog post fetched successfully", data: data.data }
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.message || "Failed to fetch blog post",
+    }
+  }
+}

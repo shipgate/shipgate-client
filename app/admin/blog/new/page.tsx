@@ -8,22 +8,28 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowLeft, Save } from "lucide-react"
 import Link from "next/link"
+import { useAuthStore } from "@/store/auth"
+import { createBlogPost } from "@/lib/blog-admin-api"
+import { toast } from "sonner"
+import { LoadingSpinner } from "@/components/loading-spinner"
 
 const categories = ["Packaging", "Shipping Guide", "Customs", "Tutorial", "Insurance", "Pricing"]
 
 export default function NewBlogArticlePage() {
+  const token = useAuthStore((state) => state.token)
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
     category: "Shipping Guide",
-    author: "",
     excerpt: "",
     content: "",
-    image: "",
     published: false,
   })
-
+  const [imageType, setImageType] = useState<'file' | 'url'>('url')
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imageUrl, setImageUrl] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target
@@ -33,10 +39,47 @@ export default function NewBlogArticlePage() {
     })
   }
 
-  const handleSave = () => {
-    console.log("[v0] New article created:", formData)
-    setSaveSuccess(true)
-    setTimeout(() => setSaveSuccess(false), 3000)
+  const handleSave = async () => {
+    if (!token) {
+      toast.error("Authentication required")
+      return
+    }
+
+    setIsLoading(true)
+    const data = new FormData()
+    data.append('title', formData.title)
+    data.append('slug', formData.slug)
+    data.append('category', formData.category.toLowerCase())
+    data.append('excerpt', formData.excerpt)
+    data.append('content', formData.content)
+    data.append('status', formData.published ? 'published' : 'draft')
+
+    if (imageType === 'file' && imageFile) {
+      data.append('image', imageFile)
+    } else if (imageType === 'url' && imageUrl) {
+      data.append('image', imageUrl)
+    }
+
+    const result = await createBlogPost(data, token)
+    if (result.success) {
+      setSaveSuccess(true)
+      toast.success("Blog post created successfully")
+      setTimeout(() => setSaveSuccess(false), 3000)
+      // Reset form
+      setFormData({
+        title: "",
+        slug: "",
+        category: "Shipping Guide",
+        excerpt: "",
+        content: "",
+        published: false,
+      })
+      setImageFile(null)
+      setImageUrl('')
+    } else {
+      toast.error(result.message)
+    }
+    setIsLoading(false)
   }
 
   const generateSlug = (title: string) => {
@@ -115,7 +158,7 @@ export default function NewBlogArticlePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">Category</label>
                   <select
@@ -130,18 +173,6 @@ export default function NewBlogArticlePage() {
                       </option>
                     ))}
                   </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Author</label>
-                  <Input
-                    type="text"
-                    name="author"
-                    value={formData.author}
-                    onChange={handleChange}
-                    placeholder="Author name"
-                    className="h-11"
-                  />
                 </div>
               </div>
             </CardContent>
@@ -175,9 +206,9 @@ export default function NewBlogArticlePage() {
                 value={formData.content}
                 onChange={handleChange}
                 placeholder="Write your article content here. Use markdown format. 
-## Headers
-- Bullet points
-**Bold text**"
+                ## Headers
+                - Bullet points
+                **Bold text**"
                 rows={12}
                 className="w-full px-3 py-2 rounded-lg border border-border text-foreground placeholder:text-foreground/40 font-mono text-sm"
               />
@@ -194,18 +225,52 @@ export default function NewBlogArticlePage() {
               <CardTitle>Featured Image</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Input
-                type="text"
-                name="image"
-                value={formData.image}
-                onChange={handleChange}
-                placeholder="/shipping-example.jpg"
-                className="h-11"
-              />
-              {formData.image && (
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="imageType"
+                    value="url"
+                    checked={imageType === 'url'}
+                    onChange={() => setImageType('url')}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm font-medium">Enter URL</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="imageType"
+                    value="file"
+                    checked={imageType === 'file'}
+                    onChange={() => setImageType('file')}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm font-medium">Upload File</span>
+                </label>
+              </div>
+
+              {imageType === 'url' ? (
+                <Input
+                  type="text"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  className="h-11"
+                />
+              ) : (
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                  className="h-11"
+                />
+              )}
+
+              {((imageType === 'url' && imageUrl) || (imageType === 'file' && imageFile)) && (
                 <div className="w-full h-40 bg-muted rounded-lg overflow-hidden">
                   <img
-                    src={formData.image || "/placeholder.svg"}
+                    src={imageType === 'url' ? imageUrl : URL.createObjectURL(imageFile!)}
                     alt="Preview"
                     className="w-full h-full object-cover"
                   />
@@ -236,8 +301,8 @@ export default function NewBlogArticlePage() {
                   {formData.published ? "This article will be visible on the blog." : "Save as draft to publish later."}
                 </p>
 
-                <Button onClick={handleSave} className="w-full bg-primary hover:bg-primary/90 text-white gap-2">
-                  <Save className="w-4 h-4" />
+                <Button onClick={handleSave} disabled={isLoading} className="w-full bg-primary hover:bg-primary/90 text-white gap-2">
+                  {isLoading ? <LoadingSpinner /> : <Save className="w-4 h-4" />}
                   Save Article
                 </Button>
               </div>

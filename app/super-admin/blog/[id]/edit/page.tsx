@@ -7,68 +7,65 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowLeft, Save } from "lucide-react"
 import Link from "next/link"
+import { useAuthStore } from "@/store/auth"
+import { getBlogPost, updateBlogPost } from "@/lib/blog-admin-api"
+import { toast } from "sonner"
+import { LoadingSpinner } from "@/components/loading-spinner"
+import { useParams } from "next/navigation"
 
 const categories = ["Packaging", "Shipping Guide", "Customs", "Tutorial", "Insurance", "Pricing"]
 
-// Mock articles database
-const mockArticles: Record<number, any> = {
-  1: {
-    id: 1,
-    title: "Tips for Optimal Packaging: Ensure Safe Delivery",
-    slug: "tips-optimal-packaging",
-    category: "Packaging",
-    author: "John Smith",
-    excerpt: "Learn the best practices for packaging your items to prevent damage during transit.",
-    content: "# Optimal Packaging Tips\n\nProper packaging is essential for safe delivery...",
-    image: "/shipping-packaging.jpg",
-    published: true,
-  },
-  2: {
-    id: 2,
-    title: "Air vs Sea Shipping: Which One is Right for You?",
-    slug: "air-vs-sea-shipping",
-    category: "Shipping Guide",
-    author: "Sarah Johnson",
-    excerpt: "Compare air and sea shipping options to make the best choice for your business needs.",
-    content: "# Air vs Sea Shipping\n\nChoosing between air and sea shipping...",
-    image: "/airport-cargo-logistics.jpg",
-    published: true,
-  },
-  3: {
-    id: 3,
-    title: "Complete Guide to Customs Documentation",
-    slug: "customs-documentation-guide",
-    category: "Customs",
-    author: "Michael Chen",
-    excerpt: "Everything you need to know about customs forms, HS codes, and required documentation.",
-    content: "# Customs Documentation Guide\n\nCustoms documentation is crucial...",
-    image: "/customs-border-checkpoint.jpg",
-    published: true,
-  },
-}
-
-export default function EditBlogArticlePage({ params }: { params: { id: string } }) {
-  const articleId = Number.parseInt(params.id)
+export default function EditBlogArticlePage() {
+  const token = useAuthStore((state) => state.token)
+  const params = useParams()
+  const articleId = params.id
   const [formData, setFormData] = useState({
     title: "",
     slug: "",
     category: "Shipping Guide",
-    author: "",
     excerpt: "",
     content: "",
-    image: "",
     published: false,
   })
+  const [imageType, setImageType] = useState<'file' | 'url'>('url')
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imageUrl, setImageUrl] = useState('')
   const [saveSuccess, setSaveSuccess] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isFetching, setIsFetching] = useState(true)
 
   useEffect(() => {
-    const article = mockArticles[articleId]
-    if (article) {
-      setFormData(article)
+    const fetchPost = async () => {
+      if (!token) return
+      setIsFetching(true)
+      const result = await getBlogPost(String(articleId), token)
+      if (result.success && result.data) {
+        const post = result.data
+        setFormData({
+          title: post.title,
+          slug: post.slug,
+          category: post.category.charAt(0).toUpperCase() + post.category.slice(1), // capitalize
+          excerpt: post.excerpt,
+          content: post.content,
+          published: post.status === 'published',
+        })
+        if (post.image) {
+          if (post.image.startsWith('http')) {
+            setImageType('url')
+            setImageUrl(post.image)
+          } else {
+            // assume it's a file, but since we can't load file, set to url
+            setImageType('url')
+            setImageUrl(post.image)
+          }
+        }
+      } else {
+        toast.error(result.message)
+      }
+      setIsFetching(false)
     }
-    setIsLoading(false)
-  }, [articleId])
+    fetchPost()
+  }, [articleId, token])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target
@@ -78,10 +75,36 @@ export default function EditBlogArticlePage({ params }: { params: { id: string }
     })
   }
 
-  const handleSave = () => {
-    console.log("[v0] Article updated:", formData)
-    setSaveSuccess(true)
-    setTimeout(() => setSaveSuccess(false), 3000)
+  const handleSave = async () => {
+    if (!token) {
+      toast.error("Authentication required")
+      return
+    }
+
+    setIsLoading(true)
+    const data = new FormData()
+    data.append('title', formData.title)
+    data.append('slug', formData.slug)
+    data.append('category', formData.category.toLowerCase())
+    data.append('excerpt', formData.excerpt)
+    data.append('content', formData.content)
+    data.append('status', formData.published ? 'published' : 'draft')
+
+    if (imageType === 'file' && imageFile) {
+      data.append('image', imageFile)
+    } else if (imageType === 'url' && imageUrl) {
+      data.append('image', imageUrl)
+    }
+
+    const result = await updateBlogPost(String(articleId), data, token)
+    if (result.success) {
+      setSaveSuccess(true)
+      toast.success("Blog post updated successfully")
+      setTimeout(() => setSaveSuccess(false), 3000)
+    } else {
+      toast.error(result.message)
+    }
+    setIsLoading(false)
   }
 
   const generateSlug = (title: string) => {
@@ -97,8 +120,8 @@ export default function EditBlogArticlePage({ params }: { params: { id: string }
     setFormData((prev) => ({ ...prev, slug: generateSlug(title) }))
   }
 
-  if (isLoading) {
-    return <div className="text-center py-12">Loading article...</div>
+  if (isFetching) {
+    return <div className="text-center py-12"><LoadingSpinner /></div>
   }
 
   return (
@@ -164,7 +187,7 @@ export default function EditBlogArticlePage({ params }: { params: { id: string }
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">Category</label>
                   <select
@@ -179,18 +202,6 @@ export default function EditBlogArticlePage({ params }: { params: { id: string }
                       </option>
                     ))}
                   </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Author</label>
-                  <Input
-                    type="text"
-                    name="author"
-                    value={formData.author}
-                    onChange={handleChange}
-                    placeholder="Author name"
-                    className="h-11"
-                  />
                 </div>
               </div>
             </CardContent>
@@ -240,18 +251,52 @@ export default function EditBlogArticlePage({ params }: { params: { id: string }
               <CardTitle>Featured Image</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Input
-                type="text"
-                name="image"
-                value={formData.image}
-                onChange={handleChange}
-                placeholder="/shipping-example.jpg"
-                className="h-11"
-              />
-              {formData.image && (
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="imageType"
+                    value="url"
+                    checked={imageType === 'url'}
+                    onChange={() => setImageType('url')}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm font-medium">Enter URL</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="imageType"
+                    value="file"
+                    checked={imageType === 'file'}
+                    onChange={() => setImageType('file')}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm font-medium">Upload File</span>
+                </label>
+              </div>
+
+              {imageType === 'url' ? (
+                <Input
+                  type="text"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  className="h-11"
+                />
+              ) : (
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                  className="h-11"
+                />
+              )}
+
+              {((imageType === 'url' && imageUrl) || (imageType === 'file' && imageFile)) && (
                 <div className="w-full h-40 bg-muted rounded-lg overflow-hidden">
                   <img
-                    src={formData.image || "/placeholder.svg"}
+                    src={imageType === 'url' ? imageUrl : URL.createObjectURL(imageFile!)}
                     alt="Preview"
                     className="w-full h-full object-cover"
                   />
@@ -282,8 +327,8 @@ export default function EditBlogArticlePage({ params }: { params: { id: string }
                   {formData.published ? "This article is visible on the blog." : "This article is saved as draft."}
                 </p>
 
-                <Button onClick={handleSave} className="w-full bg-primary hover:bg-primary/90 text-white gap-2">
-                  <Save className="w-4 h-4" />
+                <Button onClick={handleSave} disabled={isLoading} className="w-full bg-primary hover:bg-primary/90 text-white gap-2">
+                  {isLoading ? <LoadingSpinner /> : <Save className="w-4 h-4" />}
                   Update Article
                 </Button>
               </div>

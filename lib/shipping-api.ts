@@ -1,0 +1,81 @@
+import { API } from "@/lib/constants"
+
+interface ShippingApiOptions extends RequestInit {
+  token?: string
+}
+
+interface ShippingResponse<T = unknown> {
+  success: boolean
+  message?: string
+  data: T
+  [key: string]: unknown
+}
+
+async function request<T = ShippingResponse>(path: string, options: ShippingApiOptions = {}) {
+  const { token, ...restOptions } = options
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  }
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
+  const response = await fetch(`${API}${path}`, {
+    headers,
+    ...restOptions,
+  })
+
+  const data = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    const errorMessage = (data && (data.message || data.error)) || "Unable to complete request."
+    throw new Error(String(errorMessage))
+  }
+
+  return data as T
+}
+
+export async function createShipment(payload: unknown, token: string) {
+  return request<ShippingResponse>('/api/v1/shipping/shipments', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    token,
+  })
+}
+
+export async function getCustomerShipments(token: string, page = 1, limit = 20) {
+  return request<ShippingResponse<any[]>>(`/api/v1/shipping/shipments?page=${page}&limit=${limit}`, {
+    method: 'GET',
+    token,
+  })
+}
+
+export async function getShipmentDetails(shipmentNumber: string, token: string) {
+  return request<ShippingResponse>('/api/v1/shipping/shipments/' + encodeURIComponent(shipmentNumber), {
+    method: 'GET',
+    token,
+  })
+}
+
+export async function updateShipment(shipmentNumber: string, payload: unknown, token: string) {
+  return request<ShippingResponse>('/api/v1/shipping/shipments/' + encodeURIComponent(shipmentNumber), {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+    token,
+  })
+}
+
+export async function cancelShipment(shipmentNumber: string, reason: string, token: string) {
+  return request<ShippingResponse>('/api/v1/shipping/shipments/' + encodeURIComponent(shipmentNumber), {
+    method: 'DELETE',
+    body: JSON.stringify({ reason }),
+    token,
+  })
+}
+
+export async function getPublicShipmentTracking(shipmentNumber: string) {
+  return request<ShippingResponse>('/api/v1/shipping/shipments/' + encodeURIComponent(shipmentNumber) + '/tracking', {
+    method: 'GET',
+  })
+}

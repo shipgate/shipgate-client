@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { TrackingTimeline } from '@/components/tracking/tracking-timeline';
 import { TrackingMap } from '@/components/tracking/tracking-map';
 import { Search, AlertCircle } from 'lucide-react';
+import { getPublicShipmentTracking } from '@/lib/shipping-api';
+import { buildTimelineFromShipment, getStatusBadgeClass, formatStatusLabel } from '@/lib/shipment-helpers';
 
 export default function TrackPage() {
   const searchParams = useSearchParams();
@@ -17,123 +19,40 @@ export default function TrackPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [shipment, setShipment] = useState<any>(null);
   const [notFound, setNotFound] = useState(false);
+  const [error, setError] = useState('');
 
-  // Mock shipment data - replace with real API call
-  const mockShipmentData = {
-    'SHP-ABC123-XYZ': {
-      trackingNumber: 'SHP-ABC123-XYZ',
-      status: 'in_transit',
-      shippingType: 'air',
-      origin: 'Shanghai, China',
-      destination: 'Lagos, Nigeria',
-      weight: '150 kg',
-      estimatedDelivery: 'Nov 10, 2025',
-      carrier: 'China Eastern Airlines → Arik Air',
-      cost: '$1,080',
-      timeline: [
-        {
-          location: 'Shanghai Warehouse, China',
-          status: 'Package received',
-          timestamp: '2025-11-02 08:30 AM',
-          completed: true,
-          details: 'Package picked up and weighed',
-        },
-        {
-          location: 'Shanghai Pudong Airport, China',
-          status: 'In airport customs',
-          timestamp: '2025-11-03 02:15 PM',
-          completed: true,
-          details: 'Customs clearance in progress',
-        },
-        {
-          location: 'Enroute to Murtala Muhammed Airport',
-          status: 'In flight',
-          timestamp: '2025-11-04 11:00 AM - Current',
-          completed: true,
-          details: 'Flight number: CE-888, Altitude: 38,000 ft',
-          flightInfo: 'Current route: Over Mediterranean Sea',
-        },
-        {
-          location: 'Murtala Muhammed Airport, Lagos, Nigeria',
-          status: 'Arriving soon',
-          timestamp: '2025-11-05 06:30 AM (Est.)',
-          completed: false,
-          details: 'Expected arrival at Nigerian customs',
-        },
-        {
-          location: 'Lagos Warehouse, Nigeria',
-          status: 'Pending delivery',
-          timestamp: '2025-11-06 (Est.)',
-          completed: false,
-          details: 'Final destination - delivery confirmation',
-        },
-      ],
-    },
-    'SHP-DEF456-UVW': {
-      trackingNumber: 'SHP-DEF456-UVW',
-      status: 'delivered',
-      shippingType: 'sea',
-      origin: 'Shenzhen, China',
-      destination: 'Port Harcourt, Nigeria',
-      containerType: '20ft',
-      cbmVolume: '28 CBM',
-      estimatedDelivery: 'Oct 28, 2025',
-      carrier: 'MSC (Mediterranean Shipping Company)',
-      cost: '$5,400',
-      timeline: [
-        {
-          location: 'Shenzhen Warehouse, China',
-          status: 'Cargo received',
-          timestamp: '2025-10-01 10:00 AM',
-          completed: true,
-          details: 'Container loaded and sealed',
-        },
-        {
-          location: 'Shenzhen Port, China',
-          status: 'Port departure',
-          timestamp: '2025-10-03 04:00 PM',
-          completed: true,
-          details: 'Vessel: MSC Gülsün, Container ID: MSCU123456',
-        },
-        {
-          location: 'In transit - Atlantic Ocean',
-          status: 'At sea',
-          timestamp: '2025-10-10 (Ongoing)',
-          completed: true,
-          details: 'Expected Suez Canal transit: Oct 15',
-        },
-        {
-          location: 'Port Harcourt, Nigeria',
-          status: 'Port arrival',
-          timestamp: '2025-10-26 08:30 AM',
-          completed: true,
-          details: 'Container unloaded and cleared',
-        },
-        {
-          location: 'Port Harcourt Warehouse, Nigeria',
-          status: 'Delivered',
-          timestamp: '2025-10-28 02:00 PM',
-          completed: true,
-          details: 'Received by warehouse manager',
-        },
-      ],
-    },
-  };
+  useEffect(() => {
+    if (trackingNumber) {
+      fetchShipment(trackingNumber)
+    }
+  }, [trackingNumber]);
+
+  const fetchShipment = async (trackingId: string) => {
+    setError('')
+    setNotFound(false)
+    setIsLoading(true)
+    try {
+      const response = await getPublicShipmentTracking(trackingId)
+      const responseAny = response as any
+      const data = responseAny.data?.shipment || responseAny.data || response
+      if (!data || Object.keys(data).length === 0) {
+        setNotFound(true)
+        setShipment(null)
+      } else {
+        setShipment(data)
+      }
+    } catch (err) {
+      setNotFound(true)
+      setShipment(null)
+      setError(err instanceof Error ? err.message : 'Unable to fetch tracking details.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setNotFound(false);
-    
-    setTimeout(() => {
-      const data = mockShipmentData[trackingNumber as keyof typeof mockShipmentData];
-      if (data) {
-        setShipment(data);
-      } else {
-        setNotFound(true);
-      }
-      setIsLoading(false);
-    }, 800);
+    await fetchShipment(trackingNumber);
   };
 
   return (
@@ -141,7 +60,6 @@ export default function TrackPage() {
       <Navbar />
       <main className="min-h-screen bg-muted/30 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          {/* Search Section */}
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>Track Your Shipment</CardTitle>
@@ -180,7 +98,12 @@ export default function TrackPage() {
             </CardContent>
           </Card>
 
-          {/* Not Found Message */}
+          {error && (
+            <Card className="mb-8 border-destructive/20 bg-destructive/10">
+              <CardContent className="pt-6 text-destructive">{error}</CardContent>
+            </Card>
+          )}
+
           {notFound && (
             <Card className="mb-8 border-yellow-200 bg-yellow-50">
               <CardContent className="pt-6">
@@ -195,21 +118,19 @@ export default function TrackPage() {
             </Card>
           )}
 
-          {/* Shipment Details */}
           {shipment && (
             <>
-              {/* Header Info */}
               <Card className="mb-8">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle className="text-2xl">{shipment.trackingNumber}</CardTitle>
+                      <CardTitle className="text-2xl">{shipment.shipmentNumber || shipment.trackingNumber}</CardTitle>
                       <CardDescription>
                         {shipment.origin} → {shipment.destination}
                       </CardDescription>
                     </div>
-                    <Badge className={shipment.status === 'delivered' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
-                      {shipment.status === 'delivered' ? 'Delivered' : 'In Transit'}
+                    <Badge className={getStatusBadgeClass(shipment.currentStatus || shipment.status)}>
+                      {formatStatusLabel(shipment.currentStatus || shipment.status)}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -249,22 +170,20 @@ export default function TrackPage() {
                 </CardContent>
               </Card>
 
-              {/* Tracking Map */}
-              <TrackingMap 
-                origin={shipment.origin}
-                destination={shipment.destination}
-                status={shipment.status}
-                shippingType={shipment.shippingType}
+              <TrackingMap
+                origin={shipment.origin || 'Origin'}
+                destination={shipment.destination || 'Destination'}
+                status={shipment.currentStatus || shipment.status || 'pending'}
+                shipmentMethod={shipment.shipmentMethod}
               />
 
-              {/* Timeline */}
               <Card>
                 <CardHeader>
                   <CardTitle>Shipment Timeline</CardTitle>
                   <CardDescription>Complete tracking history</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <TrackingTimeline events={shipment.timeline} />
+                  <TrackingTimeline events={buildTimelineFromShipment(shipment)} />
                 </CardContent>
               </Card>
             </>

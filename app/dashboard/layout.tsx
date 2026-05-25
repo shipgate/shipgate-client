@@ -14,9 +14,9 @@ export default function DashboardLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <>
+    <div className="flex flex-col h-screen bg-[#f6f7fa] ">
       <DashboardHeader setmobileMenuOpen={setMobileMenuOpen} mobileMenuOpen={mobileMenuOpen} />
-      <div className="flex h-[calc(100vh-64px)]">
+      <div className="flex   rounded-4xl h-[calc(100vh-64px)]">
         {/* Desktop Sidebar */}
         <div className="hidden md:block md:w-64">
           <Sidebar />
@@ -32,10 +32,10 @@ export default function DashboardLayout({
         )}
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto bg-muted/30 w-full md:w-auto">
+        <main className="flex-1 bg-white overflow-auto rounded-3xl w-full md:w-auto">
           <div className="p-4 md:p-6">{children}</div>
         </main>
       </div>
-    </>
+    </div>
   )
 }
