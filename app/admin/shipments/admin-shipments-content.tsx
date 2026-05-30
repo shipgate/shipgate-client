@@ -1,14 +1,16 @@
 "use client"
 
-import { useEffect, useState } from "react"import Link from "next/link"import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useState } from "react"
+import Link from "next/link"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Search, Check, Plus, Trash2 } from "lucide-react"
+import { Search, Check } from "lucide-react"
 import { useAuthStore } from "@/store/auth"
 import { assignShipmentPricing, getAdminShipments, markPackageAsReceived } from "@/lib/shipping-api"
 
-export default function AdminShipmentsContent() {
+export default function ShipmentsContent() {
   const token = useAuthStore((state) => state.token)
   const [shipments, setShipments] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -16,7 +18,7 @@ export default function AdminShipmentsContent() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
   const [showPriceModal, setShowPriceModal] = useState(false)
-  const [shipmentToPrice, setShipmentToPrice] = useState<any>(null)
+  const [shipmentToPrice, setShipmentToPrice] = useState<string | null>(null)
   const [assignedPrice, setAssignedPrice] = useState("")
   const [currency, setCurrency] = useState("USD")
   const [charges, setCharges] = useState([{ description: "", amount: "" }])
@@ -49,7 +51,7 @@ export default function AdminShipmentsContent() {
     const searchLower = searchTerm.toLowerCase()
     const matchesSearch =
       `${shipment.shipmentNumber || shipment.id || ""}`.toLowerCase().includes(searchLower) ||
-      `${shipment.customer?.fullName || shipment.customer || ""}`.toLowerCase().includes(searchLower)
+      `${shipment.customerId?.fullName || shipment.customer || ""}`.toLowerCase().includes(searchLower)
     const matchesFilter = filterStatus === "all" || (shipment.currentStatus || shipment.status || "").toLowerCase() === filterStatus
     return matchesSearch && matchesFilter
   })
@@ -123,11 +125,9 @@ export default function AdminShipmentsContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">All Shipments</h1>
-          <p className="text-foreground/60">Manage shipments for admin operations and pricing assignments.</p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">All Shipments</h1>
+        <p className="text-foreground/60">Manage super-admin shipment operations and pricing.</p>
       </div>
 
       <Card>
@@ -137,7 +137,7 @@ export default function AdminShipmentsContent() {
               <Search className="absolute left-3 top-3 w-4 h-4 text-foreground/40" />
               <input
                 type="text"
-                placeholder="Search by shipment number or customer..."
+                placeholder="Search by shipment number or customer name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
@@ -162,7 +162,7 @@ export default function AdminShipmentsContent() {
       <Card>
         <CardHeader>
           <CardTitle>Shipments ({loading ? "..." : filteredShipments.length})</CardTitle>
-          <CardDescription>Admin shipment list with package receive and pricing actions.</CardDescription>
+          <CardDescription>Super-admin shipments with receive and pricing controls.</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -180,14 +180,14 @@ export default function AdminShipmentsContent() {
                     <th className="text-left py-3 px-4 font-semibold">Status</th>
                     <th className="text-left py-3 px-4 font-semibold">Delivery</th>
                     <th className="text-left py-3 px-4 font-semibold">Amount</th>
-                    <th className="text-left py-3 px-4 font-semibold">Actions</th>
+                    <th className="text-left py-3 px-4 font-semibold">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredShipments.map((shipment) => (
+                  {filteredShipments.map((shipment: any) => (
                     <tr key={shipment.shipmentNumber || shipment.id} className="border-b border-border hover:bg-muted/50">
                       <td className="py-3 px-4 font-mono text-primary">{shipment.shipmentNumber || shipment.id}</td>
-                      <td className="py-3 px-4">{shipment.customer?.fullName || shipment.customer || "Unknown"}</td>
+                      <td className="py-3 px-4">{shipment.customerId?.fullName || shipment.customer || "Unknown"}</td>
                       <td className="py-3 px-4">{shipment.shipmentType || shipment.type || "Unknown"}</td>
                       <td className="py-3 px-4">
                         <Badge variant={shipment.currentStatus === "DELIVERED" ? "default" : "secondary"}>
@@ -199,7 +199,7 @@ export default function AdminShipmentsContent() {
                         {shipment.pricing?.totalPrice ? `$${shipment.pricing.totalPrice}` : shipment.totalAmount ? `$${shipment.totalAmount}` : "Pending"}
                       </td>
                       <td className="py-3 px-4 flex flex-wrap gap-2">
-                        <Link href={`/admin/shipments/${encodeURIComponent(shipment.shipmentNumber || shipment.id)}`}>
+                        <Link href={`/super-admin/shipments/${encodeURIComponent(shipment.shipmentNumber || shipment.id)}`}>
                           <Button variant="secondary" size="sm">View</Button>
                         </Link>
                         <Button
@@ -358,214 +358,6 @@ export default function AdminShipmentsContent() {
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  )
-}
-        </CardContent>
-      </Card>
-
-      {/* Courier Assignment Modal */}
-      {showCourierModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Assign Courier - {selectedShipmentForCourier}</CardTitle>
-              <CardDescription>Select a courier for this home delivery</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-foreground">Select Courier</label>
-                <select
-                  value={selectedCourier}
-                  onChange={(e) => setSelectedCourier(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="">Choose a courier...</option>
-                  {couriers.map((courier) => (
-                    <option key={courier.id} value={courier.id.toString()}>
-                      {courier.name} ({courier.city})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setShowCourierModal(false)}>
-                  Cancel
-                </Button>
-                <Button className="bg-primary hover:bg-primary/90" onClick={handleAssignCourier}>
-                  <Check className="w-4 h-4 mr-2" /> Confirm
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {showPriceModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Assign Price - {shipmentToPrice}</CardTitle>
-              <CardDescription>Set the final delivery price for this shipment</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-foreground">Price (USD)</label>
-                <input
-                  type="number"
-                  placeholder="Enter price"
-                  value={assignedPrice}
-                  onChange={(e) => setAssignedPrice(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setShowPriceModal(false)}>
-                  Cancel
-                </Button>
-                <Button className="bg-primary hover:bg-primary/90" onClick={handlePriceAssignment}>
-                  <Check className="w-4 h-4 mr-2" /> Confirm
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {showAddShipmentModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto">
-          <Card className="w-full max-w-2xl my-4">
-            <CardHeader>
-              <CardTitle>Create New Shipment for Customer</CardTitle>
-              <CardDescription>Fill in the shipment details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 max-h-96 overflow-y-auto">
-              <div>
-                <label className="text-sm font-medium text-foreground">Customer Name *</label>
-                <Input
-                  name="customerName"
-                  value={newShipmentForm.customerName}
-                  onChange={handleAddShipmentChange}
-                  placeholder="Customer name"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground">Shipping Type</label>
-                <select
-                  name="shippingType"
-                  value={newShipmentForm.shippingType}
-                  onChange={handleAddShipmentChange}
-                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="air">Air Freight</option>
-                  <option value="sea">Sea Freight</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground">Sender Name *</label>
-                <Input
-                  name="senderName"
-                  value={newShipmentForm.senderName}
-                  onChange={handleAddShipmentChange}
-                  placeholder="Sender name"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground">Sender Phone *</label>
-                <Input
-                  name="senderPhone"
-                  value={newShipmentForm.senderPhone}
-                  onChange={handleAddShipmentChange}
-                  placeholder="Phone number"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground">Sender Address *</label>
-                <Input
-                  name="senderAddress"
-                  value={newShipmentForm.senderAddress}
-                  onChange={handleAddShipmentChange}
-                  placeholder="Sender address"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground">Pickup Address in Lagos</label>
-                <Input
-                  name="pickupAddress"
-                  value={newShipmentForm.pickupAddress}
-                  onChange={handleAddShipmentChange}
-                  placeholder="Pickup address"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground">Recipient Name *</label>
-                <Input
-                  name="recipientName"
-                  value={newShipmentForm.recipientName}
-                  onChange={handleAddShipmentChange}
-                  placeholder="Recipient name"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground">Recipient Phone *</label>
-                <Input
-                  name="recipientPhone"
-                  value={newShipmentForm.recipientPhone}
-                  onChange={handleAddShipmentChange}
-                  placeholder="Phone number"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground">Recipient Address *</label>
-                <Input
-                  name="recipientAddress"
-                  value={newShipmentForm.recipientAddress}
-                  onChange={handleAddShipmentChange}
-                  placeholder="Recipient address"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground">Item Description *</label>
-                <Input
-                  name="itemDescription"
-                  value={newShipmentForm.itemDescription}
-                  onChange={handleAddShipmentChange}
-                  placeholder="What are you shipping?"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground">Weight (kg) *</label>
-                <Input
-                  name="weight"
-                  type="number"
-                  value={newShipmentForm.weight}
-                  onChange={handleAddShipmentChange}
-                  placeholder="Weight in kg"
-                  step="0.1"
-                />
-              </div>
-            </CardContent>
-            <div className="flex gap-2 justify-end p-4 border-t border-border">
-              <Button variant="outline" onClick={() => setShowAddShipmentModal(false)}>
-                Cancel
-              </Button>
-              <Button className="bg-primary hover:bg-primary/90" onClick={handleAddShipment}>
-                <Check className="w-4 h-4 mr-2" /> Create Shipment
-              </Button>
-            </div>
-          </Card>
         </div>
       )}
     </div>
