@@ -51,6 +51,49 @@ export async function getCustomerShipments(token: string, page = 1, limit = 20) 
   })
 }
 
+export async function getAdminShipments(
+  token: string,
+  page = 1,
+  limit = 20,
+  status?: string,
+  shipmentType?: string,
+  shipmentMethod?: string,
+  customerId?: string,
+) {
+  const query = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  })
+
+  if (status) query.set('status', status)
+  if (shipmentType) query.set('shipmentType', shipmentType)
+  if (shipmentMethod) query.set('shipmentMethod', shipmentMethod)
+  if (customerId) query.set('customerId', customerId)
+
+  return request<ShippingResponse<any[]>>(`/api/v1/shipping/admin/shipments?${query.toString()}`, {
+    method: 'GET',
+    token,
+  })
+}
+
+export async function markPackageAsReceived(shipmentNumber: string, payload: unknown, token: string) {
+  return request<ShippingResponse>(`/api/v1/shipping/admin/shipments/${encodeURIComponent(
+    shipmentNumber,
+  )}/package-received`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+    token,
+  })
+}
+
+export async function assignShipmentPricing(shipmentNumber: string, payload: unknown, token: string) {
+  return request<ShippingResponse>(`/api/v1/shipping/admin/shipments/${encodeURIComponent(shipmentNumber)}/pricing`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    token,
+  })
+}
+
 export async function getShipmentDetails(shipmentNumber: string, token: string) {
   return request<ShippingResponse>('/api/v1/shipping/shipments/' + encodeURIComponent(shipmentNumber), {
     method: 'GET',

@@ -34,6 +34,7 @@ export default function ShipmentDetailsPage() {
   const token = useAuthStore((state) => state.token)
 
   const [shipment, setShipment] = useState<any>(null)
+  const [items, setItems] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [updateLoading, setUpdateLoading] = useState(false)
   const [cancelLoading, setCancelLoading] = useState(false)
@@ -52,6 +53,7 @@ export default function ShipmentDetailsPage() {
       const response = await getShipmentDetails(shipmentNumber, token)
       const data = (response as any).data?.shipment || (response as any).data || response
       setShipment(data)
+      setItems((response as any).data?.items || []) 
       const method = data?.deliveryMethod || "HOME_DELIVERY"
       setDeliveryMethod(method)
       setCosignees(Array.isArray(data?.cosignees) && data.cosignees.length > 0 ? data.cosignees : [defaultCosignee])
@@ -231,8 +233,8 @@ export default function ShipmentDetailsPage() {
                 <div>
                   <p className="text-sm font-medium text-foreground">Items</p>
                   <div className="space-y-2">
-                    {Array.isArray(shipment.items) ? (
-                      shipment.items.map((item: any, index: number) => (
+                    {Array.isArray(items) ? (
+                      items.map((item: any, index: number) => (
                         <div key={index} className="rounded-lg border border-border p-3">
                           <p className="font-semibold text-foreground">{item.description || `Item ${index + 1}`}</p>
                           <p className="text-foreground/60 text-sm">

@@ -8,6 +8,7 @@ interface TimelineEvent {
   timestamp: string;
   completed: boolean;
   details: string;
+  parcelUpdates?: Array<{ parcelId: string; previousStatus?: string; newStatus?: string }>;
   flightInfo?: string;
 }
 
@@ -23,9 +24,9 @@ export function TrackingTimeline({ events }: TrackingTimelineProps) {
           {/* Timeline Connector */}
           <div className="flex flex-col items-center">
             {event.completed ? (
-              <CheckCircle2 className="w-6 h-6 text-green-500 flex-shrink-0" />
+              <CheckCircle2 className="w-6 h-6 text-green-500 shrink-0" />
             ) : (
-              <Circle className="w-6 h-6 text-muted-foreground flex-shrink-0" />
+              <Circle className="w-6 h-6 text-muted-foreground shrink-0" />
             )}
             {index < events.length - 1 && (
               <div className={`w-0.5 h-16 ${event.completed ? 'bg-green-500' : 'bg-muted'}`} />
@@ -54,6 +55,24 @@ export function TrackingTimeline({ events }: TrackingTimelineProps) {
                 </div>
 
                 <p className="text-foreground/60 ml-6">{event.details}</p>
+
+                {Array.isArray(event.parcelUpdates) && event.parcelUpdates.length > 0 ? (
+                  <div className="ml-6 rounded-lg border border-border bg-surface p-3 text-sm">
+                    <p className="font-semibold text-foreground">Parcel updates</p>
+                    <div className="mt-2 space-y-2">
+                      {event.parcelUpdates.map((parcel, parcelIndex) => (
+                        <div key={parcelIndex} className="rounded-lg bg-background p-2">
+                          <p className="font-medium text-foreground">{parcel.parcelId}</p>
+                          <p className="text-foreground/70 text-xs">
+                            {parcel.previousStatus ? `From ${parcel.previousStatus}` : ""}
+                            {parcel.previousStatus && parcel.newStatus ? " → " : ""}
+                            {parcel.newStatus || "Status updated"}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
 
                 {event.flightInfo && (
                   <div className="ml-6 p-2 bg-blue-50 rounded border-l-2 border-blue-500">

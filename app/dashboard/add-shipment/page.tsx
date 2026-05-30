@@ -13,8 +13,9 @@ import { createShipment } from "@/lib/shipping-api"
 
 const defaultSingleShipment = {
   supplierName: "",
-  supplierPhone: "",
-  supplierEmail: "",
+  companyName: "",
+  phoneNumber: "",
+  email: "",
   supplierAddress: "",
 }
 
@@ -33,6 +34,10 @@ const defaultCosignee = {
 
 const defaultParcel = {
   parcelId: "",
+  supplierName: "",
+  companyName: "",
+  phoneNumber: "",
+  email: "",
   weight: "",
   length: "",
   width: "",
@@ -90,21 +95,34 @@ export default function AddShipmentPage() {
       return
     }
 
-    if (shipmentType === "SINGLE" && !singleShipment.supplierName.trim()) {
-      setError("Supplier name is required for single shipments.")
-      return
+    if (shipmentType === "SINGLE") {
+      if (!singleShipment.supplierName.trim()) {
+        setError("Supplier name is required for single shipments.")
+        return
+      }
+      if (!singleShipment.phoneNumber.trim()) {
+        setError("Supplier phone number is required for single shipments.")
+        return
+      }
+      if (!singleShipment.email.trim()) {
+        setError("Supplier email is required for single shipments.")
+        return
+      }
     }
 
     const validItems = items.filter((item) => item.description.trim())
-    if (validItems.length === 0) {
-      setError("Please add at least one item for this shipment.")
-      return
-    }
 
     if (shipmentType === "CONSOLIDATION") {
-      const validParcels = parcels.filter((parcel) => parcel.parcelId.trim())
+      const validParcels = parcels.filter(
+        (parcel) =>
+          parcel.parcelId.trim() &&
+          parcel.supplierName.trim() &&
+          parcel.companyName.trim() &&
+          parcel.phoneNumber.trim() &&
+          parcel.email.trim(),
+      )
       if (validParcels.length === 0) {
-        setError("Please add at least one parcel for consolidation shipments.")
+        setError("Please add at least one parcel with supplier details for consolidation shipments.")
         return
       }
     }
@@ -113,35 +131,51 @@ export default function AddShipmentPage() {
       shipmentType,
       shipmentMethod,
       deliveryMethod,
-      items: validItems.map((item) => ({
-        description: item.description,
-        quantity: Number(item.quantity) || 1,
-        weight: Number(item.weight) || 0,
-        value: Number(item.value) || 0,
-      })),
       cosignees: cosignees
         .filter((cosignee) => cosignee.name.trim() || cosignee.email.trim() || cosignee.phone.trim())
         .map((cosignee) => ({
           name: cosignee.name,
-          phone: cosignee.phone,
+          phoneNumber: cosignee.phone,
           email: cosignee.email,
         })),
+    }
+
+    if (validItems.length > 0) {
+      payload.items = validItems.map((item) => ({
+        description: item.description,
+        quantity: Number(item.quantity) || 1,
+        weight: Number(item.weight) || 0,
+        unitPrice: Number(item.value) || 0,
+        currency: "USD",
+      }))
     }
 
     if (shipmentType === "SINGLE") {
       payload.singleShipment = {
         supplierName: singleShipment.supplierName,
-        supplierPhone: singleShipment.supplierPhone,
-        supplierEmail: singleShipment.supplierEmail,
+        companyName: singleShipment.companyName,
+        phoneNumber: singleShipment.phoneNumber,
+        email: singleShipment.email,
         supplierAddress: singleShipment.supplierAddress,
       }
     }
 
     if (shipmentType === "CONSOLIDATION") {
       payload.parcels = parcels
-        .filter((parcel) => parcel.parcelId.trim())
+        .filter(
+          (parcel) =>
+            parcel.parcelId.trim() &&
+            parcel.supplierName.trim() &&
+            parcel.companyName.trim() &&
+            parcel.phoneNumber.trim() &&
+            parcel.email.trim(),
+        )
         .map((parcel) => ({
           parcelId: parcel.parcelId,
+          supplierName: parcel.supplierName,
+          companyName: parcel.companyName,
+          phoneNumber: parcel.phoneNumber,
+          email: parcel.email,
           weight: Number(parcel.weight) || 0,
           length: Number(parcel.length) || 0,
           width: Number(parcel.width) || 0,
@@ -280,18 +314,18 @@ export default function AddShipmentPage() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Supplier Phone</label>
                   <Input
-                    name="supplierPhone"
+                    name="phoneNumber"
                     placeholder="+86 138 0000 0000"
-                    value={singleShipment.supplierPhone}
+                    value={singleShipment.phoneNumber}
                     onChange={handleSingleShipmentChange}
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Supplier Email</label>
                   <Input
-                    name="supplierEmail"
+                    name="email"
                     placeholder="supplier@example.com"
-                    value={singleShipment.supplierEmail}
+                    value={singleShipment.email}
                     onChange={handleSingleShipmentChange}
                   />
                 </div>
@@ -333,6 +367,26 @@ export default function AddShipmentPage() {
                       onChange={(e) => handleParcelChange(index, "parcelId", e.target.value)}
                     />
                     <Input
+                      placeholder="Supplier Name"
+                      value={parcel.supplierName}
+                      onChange={(e) => handleParcelChange(index, "supplierName", e.target.value)}
+                    />
+                    <Input
+                      placeholder="Company Name"
+                      value={parcel.companyName}
+                      onChange={(e) => handleParcelChange(index, "companyName", e.target.value)}
+                    />
+                    <Input
+                      placeholder="Phone Number"
+                      value={parcel.phoneNumber}
+                      onChange={(e) => handleParcelChange(index, "phoneNumber", e.target.value)}
+                    />
+                    <Input
+                      placeholder="Supplier Email"
+                      value={parcel.email}
+                      onChange={(e) => handleParcelChange(index, "email", e.target.value)}
+                    />
+                    <Input
                       type="number"
                       placeholder="Weight (kg)"
                       value={parcel.weight}
@@ -369,7 +423,7 @@ export default function AddShipmentPage() {
         <Card>
           <CardHeader>
             <CardTitle>Item Details</CardTitle>
-            <CardDescription>Add the goods that will travel in this shipment</CardDescription>
+            <CardDescription>Optional item data. You can submit a shipment without items if parcel/supplier details are complete.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {items.map((item, index) => (

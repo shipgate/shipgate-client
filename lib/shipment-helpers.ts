@@ -1,6 +1,7 @@
 // Timeline stages in order
 const TIMELINE_STAGES = [
-  { stage: "PACKAGE_RECEIVED", label: "Shipment Created" },
+  { stage: "SHIPMENT_CREATED", label: "Shipment Created" },
+  { stage: "PACKAGE_RECEIVED", label: "Package Received" },
   { stage: "IN_CUSTOMS", label: "In Customs" },
   { stage: "IN_TRANSIT", label: "In Transit" },
   { stage: "ARRIVED_NIGERIAN_CUSTOMS", label: "Arrived Nigerian Customs" },
@@ -14,19 +15,62 @@ interface ShipmentTimelineEvent {
   timestamp: string
   completed: boolean
   details: string
+  parcelUpdates?: Array<{ parcelId: string; previousStatus?: string; newStatus?: string }>
 }
 
 /**
  * Build a complete timeline from existing tracking history and current status
  */
 export function buildTimelineFromShipment(shipment: any): ShipmentTimelineEvent[] {
-  // If tracking history exists, use it as-is
+  // If explicit tracking history exists, use it as-is
   if (Array.isArray(shipment?.tracking) && shipment.tracking.length > 0) {
     return shipment.tracking
   }
 
   if (Array.isArray(shipment?.timeline) && shipment.timeline.length > 0) {
     return shipment.timeline
+  }
+
+  if (Array.isArray(shipment?.trackingTimeline) && shipment.trackingTimeline.length > 0) {
+    const mappedTimeline: ShipmentTimelineEvent[] = shipment.trackingTimeline.map((event: any) => ({
+      location: event.location || shipment?.currentLocation || "In Transit",
+      status: event.stage || event.status || "Unknown",
+      timestamp: event.completedAt || event.updatedAt || new Date().toLocaleString(),
+      completed: event.status === "COMPLETED" || event.stageStatus === "COMPLETED" || false,
+      details: event.notes || event.details || `${event.stage || event.status || "Stage"} updated`,
+      parcelUpdates: Array.isArray(event.parcelUpdates)
+        ? event.parcelUpdates.map((update: any) => ({
+            parcelId: update.parcelId,
+            previousStatus: update.previousStatus,
+            newStatus: update.newStatus || update.status,
+          }))
+        : Array.isArray(event.parcelStatus)
+        ? event.parcelStatus.map((update: any) => ({
+            parcelId: update.parcelId,
+            previousStatus: update.previousStatus,
+            newStatus: update.newStatus || update.status,
+          }))
+        : undefined,
+    }))
+
+    const createdEventExists = mappedTimeline.some((event: ShipmentTimelineEvent) =>
+      ["SHIPMENT_CREATED", "Shipment Created", "shipment_created", "shipment created"].includes(
+        `${event.status}`.toString().toUpperCase().replace(/ /g, "_")
+      )
+    )
+
+    if (!createdEventExists) {
+      mappedTimeline.unshift({
+        location: shipment?.origin || shipment?.currentLocation || "Origin",
+        status: "Shipment Created",
+        timestamp: shipment?.createdAt || new Date().toLocaleString(),
+        completed: true,
+        details: "Shipment record created",
+        parcelUpdates: [],
+      })
+    }
+
+    return mappedTimeline
   }
 
   // Otherwise, build from current status
@@ -37,13 +81,14 @@ export function buildTimelineFromShipment(shipment: any): ShipmentTimelineEvent[
   const currentStageIndex = TIMELINE_STAGES.findIndex((s) => s.stage === currentStatus)
 
   TIMELINE_STAGES.forEach((stageConfig, index) => {
-    const isCompleted = index <= currentStageIndex && currentStageIndex !== -1
+    const isCreatedStage = stageConfig.stage === "SHIPMENT_CREATED"
+    const isCompleted = isCreatedStage || (currentStageIndex !== -1 && index <= currentStageIndex)
     const isCurrent = index === currentStageIndex
 
     timeline.push({
       location: shipment?.currentLocation || "In Transit",
       status: stageConfig.label,
-      timestamp: isCompleted ? new Date(shipment?.updatedAt || Date.now()).toLocaleString() : "Pending",
+      timestamp: isCompleted ? new Date(shipment?.updatedAt || shipment?.createdAt || Date.now()).toLocaleString() : "Pending",
       completed: isCompleted,
       details: isCompleted
         ? `${stageConfig.label} - ${isCurrent ? "Current stage" : "Completed"}`

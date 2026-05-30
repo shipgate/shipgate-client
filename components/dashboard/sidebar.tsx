@@ -75,10 +75,10 @@ export function Sidebar({userRole = "customer"}: {userRole?: string}) {
   const {user} = useAuthStore()
 
   return (
-    <aside className="w-64 bg-[#f6f7fa]  h-full">
-      <div className="p-6 space-y-8">
+    <aside className="w-55 bg-[#f6f7fa]  h-full">
+      <div className="p-6 space-y-8 text-sm justify-between flex flex-col h-full">
         {/* Menu Items */}
-        <nav className="space-y-2">
+        <nav className="space-y-2 ">
           {menuItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href
