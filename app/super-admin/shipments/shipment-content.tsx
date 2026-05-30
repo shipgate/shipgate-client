@@ -202,7 +202,7 @@ export default function ShipmentsContent() {
                         <Link href={`/super-admin/shipments/${encodeURIComponent(shipment.shipmentNumber || shipment.id)}`}>
                           <Button variant="secondary" size="sm">View</Button>
                         </Link>
-                        <Button
+                        {/* <Button
                           variant="outline"
                           size="sm"
                           onClick={() => {
@@ -221,7 +221,7 @@ export default function ShipmentsContent() {
                           }}
                         >
                           Set Price
-                        </Button>
+                        </Button> */}
                       </td>
                     </tr>
                   ))}
