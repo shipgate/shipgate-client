@@ -27,7 +27,7 @@ export default function DashboardLayout({
         {/* Mobile Sidebar */}
         {mobileMenuOpen && (
           <div className="fixed inset-0 top-16 z-30 md:hidden">
-            <Sidebar />
+            <Sidebar collapsed={sidebarCollapsed} />
           </div>
         )}
 

@@ -6,6 +6,7 @@ import { LayoutDashboard, Package, Calculator, FileText, Settings, MessageSquare
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { useAuthStore } from "@/store/auth"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
 
 const customerMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -75,8 +76,9 @@ export function Sidebar({userRole = "customer", collapsed = false}: {userRole?: 
   const {user} = useAuthStore()
 
   return (
-    <aside className="w-55 bg-[#f6f7fa]  h-full">
-      <div className={` ${collapsed ? "px-2" : "px-6"} space-y-8 text-sm justify-between flex flex-col h-full transition-all duration-300`}>
+    <TooltipProvider delayDuration={200}>
+      <aside className="w-55 bg-[#f6f7fa]  h-full">
+        <div className={` ${collapsed ? "px-2" : "px-6"} space-y-8 text-sm justify-between flex flex-col h-full transition-all duration-300`}>
         
         {/* Menu Items */}
         <nav className="space-y-2 ">
@@ -88,17 +90,24 @@ export function Sidebar({userRole = "customer", collapsed = false}: {userRole?: 
             const Icon = item.icon
             const isActive = pathname === item.href
             return (
-              <Link key={item.href} href={item.href} title={collapsed ? item.label : ""}>
-                <div
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ",
-                    isActive ? " text-primary font-semibold" : !collapsed ? "text-foreground hover:bg-black/5" : "text-muted-foreground hover:bg-muted",
-                  )}
-                >
-                  <Icon className={`w-5 h-5 flex-shrink-0 ${collapsed ? "hover:text-primary" : ""}`} />
-                  {!collapsed && item.label}
-                </div>
+              <Link href={item.href}>
+                    <div
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ",
+                        isActive ? " text-primary font-semibold" : !collapsed ? "text-foreground hover:bg-black/5" : "text-muted-foreground hover:bg-muted",
+                      )}
+                    >
+                      <Tooltip key={item.href}>
+                        <TooltipTrigger asChild>
+                        <Icon className={`w-5 h-5 flex-shrink-0 ${collapsed ? "hover:text-primary" : ""}`} />   
+                        </TooltipTrigger>
+                          {collapsed && <TooltipContent side="right" sideOffset={1} className="ml-2">{item.label}</TooltipContent>}
+                      </Tooltip>
+                      
+                      {!collapsed && item.label}
+                    </div>
               </Link>
+              
             )
           })}
         </nav>
@@ -117,7 +126,8 @@ export function Sidebar({userRole = "customer", collapsed = false}: {userRole?: 
             </button>
           </a>
         </div>
-      </div>
-    </aside>
+        </div>
+      </aside>
+    </TooltipProvider>
   )
 }

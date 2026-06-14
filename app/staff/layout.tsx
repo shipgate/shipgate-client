@@ -13,13 +13,14 @@ export default function SuperAdminLayout({
   children: ReactNode
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   return (
     <>
-      <DashboardHeader mobileMenuOpen={mobileMenuOpen} setmobileMenuOpen={setMobileMenuOpen} />
+      <DashboardHeader mobileMenuOpen={mobileMenuOpen} setmobileMenuOpen={setMobileMenuOpen} sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed} />
       <div className="flex h-[calc(100vh-64px)]">
-        <div className="hidden md:block md:w-64">
-          <Sidebar userRole="staff" />
+        <div className={`hidden md:block transition-all duration-300 ${sidebarCollapsed ? "md:w-20" : "md:w-64"}`}>
+          <Sidebar userRole="staff" collapsed={sidebarCollapsed} />
         </div>
 
         

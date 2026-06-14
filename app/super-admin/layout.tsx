@@ -19,7 +19,7 @@ export default function SuperAdminLayout({
     <div className="flex flex-col h-screen bg-[#f6f7fa] ">
       <div className="flex rounded-4xl h-screen">
         {/* Desktop Sidebar */}
-        <div className="hidden md:block md:w-55">
+        <div className={`hidden md:block transition-all duration-300 ${sidebarCollapsed ? "md:w-20" : "md:w-55"}`}>
           <Sidebar userRole="super-admin" collapsed={sidebarCollapsed} />
         </div>
 
