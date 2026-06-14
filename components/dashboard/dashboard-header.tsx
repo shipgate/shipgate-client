@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Bell, Menu, X } from "lucide-react"
+import { Bell, Menu, X, PanelLeftOpen } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 
@@ -39,10 +39,14 @@ const mockNotifications = [
 
 export function DashboardHeader({
   setmobileMenuOpen,
-  mobileMenuOpen
+  mobileMenuOpen,
+  sidebarCollapsed,
+  setSidebarCollapsed
 }: {
   setmobileMenuOpen: (open: boolean) => void
   mobileMenuOpen: boolean
+  sidebarCollapsed: boolean
+  setSidebarCollapsed: (collapsed: boolean) => void
 }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const unreadCount = mockNotifications.filter((n) => !n.read).length
@@ -64,11 +68,15 @@ export function DashboardHeader({
 
   return (
     <header className="bg-[#f6f7fa]  sticky top-0 z-40">
-      <div className="flex items-center justify-between h-16 px-4 md:px-6">
-        {/* Logo */}
-        <div className="flex items-center gap-2 max-md:hidden">
-            <img src="/logo.png" alt="" className="w-[120px] h-[120px]" />
-        </div>
+      <div className={`flex items-center justify-between h-16 ${sidebarCollapsed? "md:h-10" : "md:h-16"} px-4 md:pr-6`}>
+        
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="hidden md:block p-2 rounded-lg hover:bg-muted transition-colors"
+          aria-label="Toggle sidebar"
+        >
+          <PanelLeftOpen className="w-5 h-5 text-foreground" />
+        </button>
 
         {/* Mobile Menu Button */}
         <button

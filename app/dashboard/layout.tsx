@@ -12,14 +12,14 @@ export default function DashboardLayout({
   children: ReactNode
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   return (
     <div className="flex flex-col h-screen bg-[#f6f7fa] ">
-      <DashboardHeader setmobileMenuOpen={setMobileMenuOpen} mobileMenuOpen={mobileMenuOpen} />
-      <div className="flex rounded-4xl h-[calc(100vh-55px)]">
+      <div className="flex rounded-4xl h-screen">
         {/* Desktop Sidebar */}
-        <div className="hidden md:block md:w-55">
-          <Sidebar />
+        <div className={`hidden md:block transition-all duration-300 ${sidebarCollapsed ? "md:w-20" : "md:w-55"}`}>
+          <Sidebar collapsed={sidebarCollapsed} />
         </div>
 
         
@@ -32,8 +32,9 @@ export default function DashboardLayout({
         )}
 
         {/* Main Content */}
-        <main className="flex-1 bg-white overflow-auto rounded-3xl w-full md:w-auto">
-          <div className="p-5 md:p-6">{children}</div>
+        <main className="flex-1 position-fixed w-full md:w-auto">
+          <DashboardHeader setmobileMenuOpen={setMobileMenuOpen} mobileMenuOpen={mobileMenuOpen} sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed} />
+          <div className="p-5 md:p-6 h-[calc(100vh-64px)] overflow-scroll rounded-3xl bg-white ">{children}</div>
         </main>
       </div>
     </div>

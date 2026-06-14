@@ -52,7 +52,7 @@ const courierMenuItems = [
   { icon: Settings, label: "Settings", href: "/courier/settings" },
 ]
 
-export function Sidebar({userRole = "customer"}: {userRole?: string}) {
+export function Sidebar({userRole = "customer", collapsed = false}: {userRole?: string, collapsed?: boolean}) {
   const pathname = usePathname()
 
   const getMenuItems = () => {
@@ -76,22 +76,27 @@ export function Sidebar({userRole = "customer"}: {userRole?: string}) {
 
   return (
     <aside className="w-55 bg-[#f6f7fa]  h-full">
-      <div className="p-6 space-y-8 text-sm justify-between flex flex-col h-full">
+      <div className={` ${collapsed ? "px-2" : "px-6"} space-y-8 text-sm justify-between flex flex-col h-full transition-all duration-300`}>
+        
         {/* Menu Items */}
         <nav className="space-y-2 ">
+          {/* Logo */}
+        <div className={`flex items-center max-md:hidden ${collapsed ? "hidden" : ""}`}>
+            <img src="/logo.png" alt="" className="w-[100px] h-[100px]" />
+        </div>
           {menuItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href
             return (
-              <Link key={item.href} href={item.href}>
+              <Link key={item.href} href={item.href} title={collapsed ? item.label : ""}>
                 <div
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
-                    isActive ? "bg-primary/10 text-primary font-semibold" : "text-foreground hover:bg-muted",
+                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ",
+                    isActive ? " text-primary font-semibold" : !collapsed ? "text-foreground hover:bg-black/5" : "text-muted-foreground hover:bg-muted",
                   )}
                 >
-                  <Icon className="w-5 h-5" />
-                  {item.label}
+                  <Icon className={`w-5 h-5 flex-shrink-0 ${collapsed ? "hover:text-primary" : ""}`} />
+                  {!collapsed && item.label}
                 </div>
               </Link>
             )
@@ -99,15 +104,16 @@ export function Sidebar({userRole = "customer"}: {userRole?: string}) {
         </nav>
 
         {/* Logout */}
-        <div className="border-t border-border pt-6">
+        <div className={` ${!collapsed? "border-t border-border" : "" } pt-6`}>
           <a href="/">
             <button className="flex items-center gap-3 px-4 py-3 w-full text-foreground hover:bg-muted rounded-lg transition-colors">
               <Avatar>
                 <AvatarImage src="https://github.com/shadcn.png" />
                 <AvatarFallback>{user?.fullName.charAt(0)}{user?.fullName.split(" ")[1].charAt(0)}</AvatarFallback>
               </Avatar>
-              <span>{user?.fullName.split(" ")[0]}</span>
-              <LogOut className="w-5 h-5 ml-auto text-muted-foreground" />
+              {!collapsed && <span>{user?.fullName.split(" ")[0]}</span>}
+              {!collapsed && <LogOut className={`w-5 h-5 text-muted-foreground ${collapsed ? "" : "ml-auto"}`} />}
+              
             </button>
           </a>
         </div>
