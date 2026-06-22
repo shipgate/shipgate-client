@@ -31,7 +31,7 @@ const recentShipments = [
   },
 ]
 
-export function RecentShipments() {
+export function RecentShipments({ shipments }: { shipments: any[] }) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "delivered":
@@ -57,17 +57,17 @@ export function RecentShipments() {
       </CardHeader>
       <CardContent>
         <div className="space-y-3 flex flex-col gap-2">
-          {recentShipments.map((shipment) => (
-            <Link key={shipment.id} href={`/track?id=${shipment.id}`}>
+          {shipments.map((shipment) => (
+            <Link key={shipment.shipmentNumber} href={`/track?id=${shipment.shipmentNumber}`}>
               <div className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
                 <div className="flex-1">
-                  <p className="font-semibold text-foreground">{shipment.id}</p>
+                  <p className="font-semibold text-foreground">{shipment.shipmentNumber}</p>
                   <p className="text-sm text-foreground/60">{shipment.destination}</p>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <Badge className={`${getStatusColor(shipment.status)} mb-1`}>
-                      {getStatusLabel(shipment.status)}
+                    <Badge className={`${getStatusColor(shipment.currentStatus)} mb-1`}>
+                      {getStatusLabel(shipment.currentStatus)}
                     </Badge>
                     <p className="text-xs text-foreground/60">{shipment.date}</p>
                   </div>

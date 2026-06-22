@@ -16,7 +16,7 @@ export function QuickStats({ walletBalance, shipmentCount, totalSpent }: QuickSt
     {
       icon: DollarSign,
       label: "Wallet Balance",
-      value: `$${walletBalance.toFixed(2)}`,
+      value: `₦${walletBalance.toFixed(2)}`,
       color: "text-green-500",
       bgColor: "bg-green-50",
     },
@@ -30,7 +30,7 @@ export function QuickStats({ walletBalance, shipmentCount, totalSpent }: QuickSt
     {
       icon: TrendingUp,
       label: "Total Spent",
-      value: `$${totalSpent.toFixed(2)}`,
+      value: `₦${totalSpent.toFixed(2).toLocaleLowerCase()}`,
       color: "text-primary",
       bgColor: "bg-primary/10",
     },

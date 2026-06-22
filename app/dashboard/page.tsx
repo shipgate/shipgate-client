@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { WalletCard } from "@/components/dashboard/wallet-card"
@@ -10,12 +10,17 @@ import { Plus } from "lucide-react"
 import { motion } from "motion/react"
 import { useTypewriter } from "react-simple-typewriter"
 import { useAuthStore } from "@/store/auth"
+import { getCustomerShipments } from "@/lib/shipping-api"
 
 
 export default function DashboardPage() {
-  const [walletBalance] = useState(2500.0)
+  const [walletBalance] = useState(0.0)
   const [shipmentCount] = useState(12)
-  const [totalSpent] = useState(8450.5)
+  const [totalSpent] = useState(0.0)
+  const token = useAuthStore((state) => state.token)
+  const [shipments, setShipments] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
   const [text, count] = useTypewriter({
     words: [
         "Here's your shipping overview.",
@@ -30,6 +35,24 @@ export default function DashboardPage() {
   })
 
   const {user} = useAuthStore()
+
+  const loadShipments = async () => {
+    if (!token) return
+    setError("")
+    setLoading(true)
+    try {
+      const response = await getCustomerShipments(token)
+      setShipments(Array.isArray(response.data) ? response.data : [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load shipments.")
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  useEffect(() => {
+    loadShipments()
+  }, [token])
 
   return (
     <div className="space-y-6">
@@ -61,7 +84,7 @@ export default function DashboardPage() {
       viewport={{once: true}}
       transition={{duration: 0.5}}
       >
-        <QuickStats walletBalance={walletBalance} shipmentCount={shipmentCount} totalSpent={totalSpent} />
+        <QuickStats walletBalance={walletBalance} shipmentCount={shipments.length} totalSpent={totalSpent} />
       </motion.div>
 
       {/* Wallet Card and Recent Shipments */}
@@ -84,7 +107,7 @@ export default function DashboardPage() {
         viewport={{once: true}}
         transition={{duration: 0.5, delay: 0.4}}
         >
-          <RecentShipments />
+          <RecentShipments shipments={shipments} />
         </motion.div>
       </div>
 
