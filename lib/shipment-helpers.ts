@@ -21,8 +21,111 @@ interface ShipmentTimelineEvent {
 /**
  * Build a complete timeline from existing tracking history and current status
  */
+const normalizeStage = (value: string | undefined) =>
+  value
+    ?.toString()
+    .trim()
+    .toUpperCase()
+    .replace(/[-\s]+/g, "_") || ""
+
+const getStageLabel = (stageKey: string) =>
+  TIMELINE_STAGES.find(
+    (stage) => normalizeStage(stage.stage) === stageKey || normalizeStage(stage.label) === stageKey
+  )?.label
+
+const getStageIndex = (stageKey: string) =>
+  TIMELINE_STAGES.findIndex(
+    (stage) => normalizeStage(stage.stage) === stageKey || normalizeStage(stage.label) === stageKey
+  )
+
+function mapTrackingTimelineEvent(event: any, shipment: any): ShipmentTimelineEvent {
+  const stageKey = normalizeStage(event.stage || event.status || event.stageName || event.type)
+  const statusLabel =
+    getStageLabel(stageKey) || event.label || event.stage || event.status || "Unknown"
+
+  return {
+    location: event.location || shipment?.currentLocation || "In Transit",
+    status: statusLabel,
+    timestamp: event.completedAt || event.updatedAt || shipment?.updatedAt || new Date().toLocaleString(),
+    completed:
+      event.completed === true ||
+      event.status === "COMPLETED" ||
+      event.stageStatus === "COMPLETED" ||
+      ["DELIVERED", "PACKAGE_RECEIVED", "IN_CUSTOMS", "IN_TRANSIT", "ARRIVED_NIGERIAN_CUSTOMS", "ARRIVED_WAREHOUSE", "PENDING_DELIVERY", "SHIPMENT_CREATED"].includes(
+        normalizeStage(event.status || event.stage),
+      ),
+    details: event.notes || event.details || `${event.stage || event.status || "Stage"} updated`,
+    parcelUpdates: Array.isArray(event.parcelUpdates)
+      ? event.parcelUpdates.map((update: any) => ({
+          parcelId: update.parcelId,
+          previousStatus: update.previousStatus,
+          newStatus: update.newStatus || update.status,
+        }))
+      : Array.isArray(event.parcelStatus)
+      ? event.parcelStatus.map((update: any) => ({
+          parcelId: update.parcelId,
+          previousStatus: update.previousStatus,
+          newStatus: update.newStatus || update.status,
+        }))
+      : undefined,
+  }
+}
+
 export function buildTimelineFromShipment(shipment: any): ShipmentTimelineEvent[] {
-  // If explicit tracking history exists, use it as-is
+  // If explicit tracking history exists, merge it with the full stage list so pending stages remain visible.
+  if (Array.isArray(shipment?.trackingTimeline) && shipment.trackingTimeline.length > 0) {
+    const normalizedTimeline = shipment.trackingTimeline.map((event: any) => mapTrackingTimelineEvent(event, shipment))
+    const eventsByStage = new Map<string, ShipmentTimelineEvent>()
+
+    normalizedTimeline.forEach((event: ShipmentTimelineEvent) => {
+      const stageKey = normalizeStage(event.status)
+      eventsByStage.set(stageKey, event)
+    })
+
+    const currentStageKey = normalizeStage(shipment?.currentStatus || shipment?.status)
+    let currentStageIndex = getStageIndex(currentStageKey)
+
+    if (currentStageIndex === -1) {
+      currentStageIndex = normalizedTimeline
+        .map((event: ShipmentTimelineEvent) => getStageIndex(normalizeStage(event.status)))
+        .filter((index: number) => index >= 0)
+        .sort((a: number, b: number) => b - a)[0] ?? -1
+    }
+
+    const timeline = TIMELINE_STAGES.map((stageConfig, index) => {
+      const stageKey = normalizeStage(stageConfig.stage)
+      const existing = eventsByStage.get(stageKey)
+
+      if (existing) {
+        return existing
+      }
+
+      const isCompleted = currentStageIndex !== -1 && index <= currentStageIndex
+      const isCurrent = index === currentStageIndex
+
+      return {
+        location: shipment?.currentLocation || shipment?.origin || "In Transit",
+        status: stageConfig.label,
+        timestamp: isCompleted
+          ? new Date(shipment?.updatedAt || shipment?.createdAt || Date.now()).toLocaleString()
+          : "Pending",
+        completed: isCompleted,
+        details: isCompleted
+          ? `${stageConfig.label} - ${isCurrent ? "Current stage" : "Completed"}`
+          : `${stageConfig.label} - Awaiting this stage`,
+      }
+    })
+
+    const extraEvents = normalizedTimeline.filter((event: ShipmentTimelineEvent) => {
+      const normalizedStatus = normalizeStage(event.status)
+      return !TIMELINE_STAGES.some(
+        (stage) => normalizeStage(stage.stage) === normalizedStatus || normalizeStage(stage.label) === normalizedStatus,
+      )
+    })
+
+    return [...timeline, ...extraEvents]
+  }
+
   if (Array.isArray(shipment?.tracking) && shipment.tracking.length > 0) {
     return shipment.tracking
   }
@@ -31,54 +134,9 @@ export function buildTimelineFromShipment(shipment: any): ShipmentTimelineEvent[
     return shipment.timeline
   }
 
-  if (Array.isArray(shipment?.trackingTimeline) && shipment.trackingTimeline.length > 0) {
-    const mappedTimeline: ShipmentTimelineEvent[] = shipment.trackingTimeline.map((event: any) => ({
-      location: event.location || shipment?.currentLocation || "In Transit",
-      status: event.stage || event.status || "Unknown",
-      timestamp: event.completedAt || event.updatedAt || new Date().toLocaleString(),
-      completed: event.status === "COMPLETED" || event.stageStatus === "COMPLETED" || false,
-      details: event.notes || event.details || `${event.stage || event.status || "Stage"} updated`,
-      parcelUpdates: Array.isArray(event.parcelUpdates)
-        ? event.parcelUpdates.map((update: any) => ({
-            parcelId: update.parcelId,
-            previousStatus: update.previousStatus,
-            newStatus: update.newStatus || update.status,
-          }))
-        : Array.isArray(event.parcelStatus)
-        ? event.parcelStatus.map((update: any) => ({
-            parcelId: update.parcelId,
-            previousStatus: update.previousStatus,
-            newStatus: update.newStatus || update.status,
-          }))
-        : undefined,
-    }))
-
-    const createdEventExists = mappedTimeline.some((event: ShipmentTimelineEvent) =>
-      ["SHIPMENT_CREATED", "Shipment Created", "shipment_created", "shipment created"].includes(
-        `${event.status}`.toString().toUpperCase().replace(/ /g, "_")
-      )
-    )
-
-    if (!createdEventExists) {
-      mappedTimeline.unshift({
-        location: shipment?.origin || shipment?.currentLocation || "Origin",
-        status: "Shipment Created",
-        timestamp: shipment?.createdAt || new Date().toLocaleString(),
-        completed: true,
-        details: "Shipment record created",
-        parcelUpdates: [],
-      })
-    }
-
-    return mappedTimeline
-  }
-
-  // Otherwise, build from current status
   const currentStatus = shipment?.currentStatus || shipment?.status || "PENDING_PICKUP"
   const timeline: ShipmentTimelineEvent[] = []
-
-  // Find the index of the current status
-  const currentStageIndex = TIMELINE_STAGES.findIndex((s) => s.stage === currentStatus)
+  const currentStageIndex = getStageIndex(normalizeStage(currentStatus))
 
   TIMELINE_STAGES.forEach((stageConfig, index) => {
     const isCreatedStage = stageConfig.stage === "SHIPMENT_CREATED"
