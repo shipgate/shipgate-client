@@ -10,6 +10,7 @@ import { Plus, Search, RefreshCw } from "lucide-react"
 import { useAuthStore } from "@/store/auth"
 import { getCustomerShipments } from "@/lib/shipping-api"
 import { getStatusBadgeClass, formatStatusLabel } from "@/lib/shipment-helpers"
+import { PaymentOptionsModal } from "@/components/dashboard/payment-options-modal"
 
 export default function ShipmentsPage() {
   const token = useAuthStore((state) => state.token)
@@ -17,6 +18,7 @@ export default function ShipmentsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [selectedPaymentShipment, setSelectedPaymentShipment] = useState<any>(null)
 
   const loadShipments = async () => {
     if (!token) return
@@ -128,7 +130,11 @@ export default function ShipmentsPage() {
                     const route = shipment.shipmentMethod || shipment.type || ""
                     const itemType = shipment.shipmentType || shipment.type || ""
                     const delivery = shipment.deliveryMethod || ""
-                    const cost = shipment.pricing?.totalPrice ? `₦${shipment.pricing.totalPrice.toLocaleString()}` : shipment.basePrice || "Pending"
+                    const amount = Number(shipment.pricing?.totalPrice || shipment.totalAmount || shipment.basePrice || 0)
+                    const currency = shipment.pricing?.currency || shipment.currency || "NGN"
+                    const cost = amount ? `${currency === "NGN" ? "₦" : `${currency} `}${amount.toLocaleString()}` : "Pending"
+                    const paymentStatus = String(shipment.pricing?.status || shipment.paymentStatus || "").toUpperCase()
+                    const canPay = amount > 0 && paymentStatus !== "PAID"
                     const status = shipment.currentStatus || "Unknown"
 
                     return (
@@ -148,11 +154,18 @@ export default function ShipmentsPage() {
                         <td className="py-3 px-2 hidden sm:table-cell text-foreground/60">{delivery}</td>
                         <td className="py-3 px-2 hidden lg:table-cell font-semibold text-foreground">{cost}</td>
                         <td className="py-3 px-2 text-center">
-                          <Link href={`/dashboard/shipments/${trackingNumber}`}>
-                            <Button variant="ghost" size="sm" className="hover:bg-primary/10">
-                              View
-                            </Button>
-                          </Link>
+                          <div className="flex items-center justify-center gap-2">
+                            <Link href={`/dashboard/shipments/${trackingNumber}`}>
+                              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
+                                View
+                              </Button>
+                            </Link>
+                            {canPay ? (
+                              <Button size="sm" onClick={() => setSelectedPaymentShipment(shipment)}>
+                                Pay
+                              </Button>
+                            ) : null}
+                          </div>
                         </td>
                       </tr>
                     )
@@ -163,6 +176,20 @@ export default function ShipmentsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <PaymentOptionsModal
+        open={Boolean(selectedPaymentShipment)}
+        shipmentNumber={selectedPaymentShipment?.shipmentNumber || selectedPaymentShipment?.trackingNumber || ""}
+        description={`Shipment #${selectedPaymentShipment?.shipmentNumber || selectedPaymentShipment?.trackingNumber || ""}`}
+        amount={Number(
+          selectedPaymentShipment?.pricing?.totalPrice ||
+            selectedPaymentShipment?.totalAmount ||
+            selectedPaymentShipment?.basePrice ||
+            0,
+        )}
+        currency={selectedPaymentShipment?.pricing?.currency || selectedPaymentShipment?.currency || "NGN"}
+        onClose={() => setSelectedPaymentShipment(null)}
+      />
     </div>
   )
 }

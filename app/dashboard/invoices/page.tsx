@@ -1,82 +1,104 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Download, Eye } from "lucide-react"
+import { Download, Eye, RefreshCw } from "lucide-react"
+import { PaymentOptionsModal } from "@/components/dashboard/payment-options-modal"
+import { getCustomerInvoices, Invoice } from "@/lib/payments-api"
+import { useAuthStore } from "@/store/auth"
 
-// Mock invoices data
-const mockInvoices = [
-  {
-    id: "INV-2025-001",
-    date: "2025-01-15",
-    description: "Air Freight - Shipment #SHP-2025-001",
-    amount: 45000,
-    status: "Paid",
-    dueDate: "2025-01-10",
-  },
-  {
-    id: "INV-2025-002",
-    date: "2025-01-20",
-    description: "Sea Freight - Shipment #SHP-2025-002",
-    amount: 28000,
-    status: "Pending",
-    dueDate: "2025-02-05",
-  },
-  {
-    id: "INV-2025-003",
-    date: "2025-01-18",
-    description: "Consolidation Service - Shipment #SHP-2025-003",
-    amount: 12500,
-    status: "Paid",
-    dueDate: "2025-01-15",
-  },
-  {
-    id: "INV-2025-004",
-    date: "2025-01-25",
-    description: "Air Freight - Shipment #SHP-2025-004",
-    amount: 52000,
-    status: "Overdue",
-    dueDate: "2025-01-20",
-  },
-  {
-    id: "INV-2025-005",
-    date: "2025-01-22",
-    description: "Sea Freight - Shipment #SHP-2025-005",
-    amount: 35000,
-    status: "Paid",
-    dueDate: "2025-01-20",
-  },
-]
+function normalizeInvoices(data: unknown): Invoice[] {
+  if (Array.isArray(data)) return data
+  if (data && typeof data === "object") {
+    const payload = data as { invoices?: Invoice[]; docs?: Invoice[]; results?: Invoice[] }
+    if (Array.isArray(payload.invoices)) return payload.invoices
+    if (Array.isArray(payload.docs)) return payload.docs
+    if (Array.isArray(payload.results)) return payload.results
+  }
+  return []
+}
+
+function formatMoney(amount: number, currency = "NGN") {
+  const symbol = currency.toUpperCase() === "NGN" ? "₦" : `${currency.toUpperCase()} `
+  return `${symbol}${amount.toLocaleString()}`
+}
+
+function formatDate(value?: string) {
+  if (!value) return "N/A"
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString()
+}
+
+function displayStatus(status: string) {
+  return status
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
+}
 
 export default function InvoicesPage() {
+  const token = useAuthStore((state) => state.token)
+  const [invoices, setInvoices] = useState<Invoice[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("All")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
 
-  const filteredInvoices = mockInvoices.filter((invoice) => {
-    const matchesSearch =
-      invoice.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "All" || invoice.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Paid":
-        return "bg-green-100 text-green-800"
-      case "Pending":
-        return "bg-yellow-100 text-yellow-800"
-      case "Overdue":
-        return "bg-red-100 text-red-800"
-      default:
-        return "bg-gray-100 text-gray-800"
+  const loadInvoices = async () => {
+    if (!token) return
+    setLoading(true)
+    setError("")
+    try {
+      const response = await getCustomerInvoices(token)
+      setInvoices(normalizeInvoices(response.data))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load invoices.")
+    } finally {
+      setLoading(false)
     }
   }
 
-  const totalAmount = filteredInvoices.reduce((sum, inv) => sum + inv.amount, 0)
+  useEffect(() => {
+    loadInvoices()
+  }, [token])
+
+  const filteredInvoices = useMemo(
+    () =>
+      invoices.filter((invoice) => {
+        const term = searchTerm.toLowerCase()
+        const matchesSearch =
+          String(invoice.invoiceId || "").toLowerCase().includes(term) ||
+          String(invoice.shipmentNumber || "").toLowerCase().includes(term) ||
+          String(invoice.description || "").toLowerCase().includes(term)
+        const matchesStatus = statusFilter === "All" || invoice.status.toUpperCase() === statusFilter.toUpperCase()
+        return matchesSearch && matchesStatus
+      }),
+    [invoices, searchTerm, statusFilter],
+  )
+
+  const getStatusColor = (status: string) => {
+    switch (status.toUpperCase()) {
+      case "PAID":
+        return "bg-green-100 text-green-800"
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-800"
+      case "VOID":
+        return "bg-gray-100 text-gray-800"
+      default:
+        return "bg-red-100 text-red-800"
+    }
+  }
+
+  const totalAmount = invoices.reduce((sum, invoice) => sum + Number(invoice.amount || 0), 0)
+  const pendingAmount = invoices
+    .filter((invoice) => invoice.status.toUpperCase() === "PENDING")
+    .reduce((sum, invoice) => sum + Number(invoice.amount || 0), 0)
+  const defaultCurrency = invoices[0]?.currency || "NGN"
 
   return (
     <div className="flex-1 overflow-auto">
@@ -91,25 +113,19 @@ export default function InvoicesPage() {
           <Card>
             <CardContent className="pt-6">
               <p className="text-sm text-foreground/70 mb-1">Total Invoices</p>
-              <p className="text-2xl font-bold text-foreground">{mockInvoices.length}</p>
+              <p className="text-2xl font-bold text-foreground">{invoices.length}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
               <p className="text-sm text-foreground/70 mb-1">Total Amount</p>
-              <p className="text-2xl font-bold text-foreground">₦{totalAmount.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-foreground">{formatMoney(totalAmount, defaultCurrency)}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
               <p className="text-sm text-foreground/70 mb-1">Pending Amount</p>
-              <p className="text-2xl font-bold text-primary">
-                ₦
-                {mockInvoices
-                  .filter((i) => i.status === "Pending" || i.status === "Overdue")
-                  .reduce((sum, inv) => sum + inv.amount, 0)
-                  .toLocaleString()}
-              </p>
+              <p className="text-2xl font-bold text-primary">{formatMoney(pendingAmount, defaultCurrency)}</p>
             </CardContent>
           </Card>
         </div>
@@ -126,7 +142,7 @@ export default function InvoicesPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <div className="flex gap-2 flex-wrap">
-              {["All", "Paid", "Pending", "Overdue"].map((status) => (
+              {["All", "Paid", "Pending", "Void"].map((status) => (
                 <Button
                   key={status}
                   variant={statusFilter === status ? "default" : "outline"}
@@ -136,9 +152,19 @@ export default function InvoicesPage() {
                   {status}
                 </Button>
               ))}
+              <Button variant="outline" size="sm" onClick={loadInvoices} disabled={loading}>
+                <RefreshCw className="w-4 h-4" />
+                Refresh
+              </Button>
             </div>
           </CardContent>
         </Card>
+
+        {error ? (
+          <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-destructive">
+            {error}
+          </div>
+        ) : null}
 
         {/* Invoices Table */}
         <Card>
@@ -146,7 +172,9 @@ export default function InvoicesPage() {
             <CardTitle className="text-lg">Recent Invoices ({filteredInvoices.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            {filteredInvoices.length > 0 ? (
+            {loading ? (
+              <div className="py-8 text-center text-foreground/70">Loading invoices...</div>
+            ) : filteredInvoices.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="border-b border-border">
@@ -161,17 +189,19 @@ export default function InvoicesPage() {
                   </thead>
                   <tbody>
                     {filteredInvoices.map((invoice) => (
-                      <tr key={invoice.id} className="border-b border-border hover:bg-muted/50 transition-colors">
-                        <td className="py-4 px-4 font-semibold text-foreground">{invoice.id}</td>
+                      <tr key={invoice.invoiceId} className="border-b border-border hover:bg-muted/50 transition-colors">
+                        <td className="py-4 px-4 font-semibold text-foreground">{invoice.invoiceId}</td>
                         <td className="py-4 px-4 text-foreground/70 hidden md:table-cell text-sm">
-                          {invoice.description}
+                          {invoice.description || `Shipment #${invoice.shipmentNumber}`}
                         </td>
-                        <td className="py-4 px-4 text-foreground/70 hidden sm:table-cell text-sm">{invoice.date}</td>
+                        <td className="py-4 px-4 text-foreground/70 hidden sm:table-cell text-sm">
+                          {formatDate(invoice.createdAt)}
+                        </td>
                         <td className="py-4 px-4 text-right font-semibold text-foreground">
-                          ₦{invoice.amount.toLocaleString()}
+                          {formatMoney(Number(invoice.amount || 0), invoice.currency)}
                         </td>
                         <td className="py-4 px-4 text-center">
-                          <Badge className={getStatusColor(invoice.status)}>{invoice.status}</Badge>
+                          <Badge className={getStatusColor(invoice.status)}>{displayStatus(invoice.status)}</Badge>
                         </td>
                         <td className="py-4 px-4">
                           <div className="flex items-center justify-center gap-2">
@@ -181,6 +211,11 @@ export default function InvoicesPage() {
                             <Button size="sm" variant="ghost" title="Download">
                               <Download className="w-4 h-4" />
                             </Button>
+                            {invoice.status.toUpperCase() === "PENDING" ? (
+                              <Button size="sm" onClick={() => setSelectedInvoice(invoice)}>
+                                Pay
+                              </Button>
+                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -196,6 +231,16 @@ export default function InvoicesPage() {
           </CardContent>
         </Card>
       </div>
+
+      <PaymentOptionsModal
+        open={Boolean(selectedInvoice)}
+        invoiceId={selectedInvoice?.invoiceId}
+        shipmentNumber={selectedInvoice?.shipmentNumber || ""}
+        description={selectedInvoice?.description}
+        amount={Number(selectedInvoice?.amount || 0)}
+        currency={selectedInvoice?.currency || "NGN"}
+        onClose={() => setSelectedInvoice(null)}
+      />
     </div>
   )
 }
