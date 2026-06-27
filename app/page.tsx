@@ -408,8 +408,8 @@ export default function HomePage() {
             </div>
             <div>
               <h4 className="font-semibold mb-4">Contact</h4>
-              <p className="text-sm opacity-80 mb-2">WhatsApp: +234 XXX XXX XXX</p>
-              <p className="text-sm opacity-80">Email: support@</p>
+              <p className="text-sm opacity-80 mb-2">WhatsApp: +234 813 672 9646</p>
+              <p className="text-sm opacity-80">Email: hello@shipgate.ng</p>
             </div>
           </div>
           <div className="border-t border-background/20 pt-8 text-center text-sm opacity-60">
