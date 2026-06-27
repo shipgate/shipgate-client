@@ -319,55 +319,61 @@ export default function SuperAdminShipmentDetailsPage() {
                 <CardDescription>Confirm receipt and update parcel status.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Input placeholder="Location" value={receiveLocation} onChange={(e) => setReceiveLocation(e.target.value)} />
-                <Input placeholder="Notes" value={receiveNotes} onChange={(e) => setReceiveNotes(e.target.value)} />
-                {isConsolidation ? (
-                  <div className="space-y-3">
-                    <p className="text-sm font-semibold text-foreground">Parcel Updates</p>
+                {shipment.trackingTimeline.some((event: any) => event.stage === "PACKAGE_RECEIVED") ? (
+                  <p className="text-sm text-foreground/70">Package has been received.</p>
+                ) : 
+                <>
+                  <Input placeholder="Location" value={receiveLocation} onChange={(e) => setReceiveLocation(e.target.value)} />
+                  <Input placeholder="Notes" value={receiveNotes} onChange={(e) => setReceiveNotes(e.target.value)} />
+                  {isConsolidation ? (
                     <div className="space-y-3">
-                      {Array.isArray(shipment.parcels) && shipment.parcels.length > 0 ? (
-                        shipment.parcels.map((parcel: any, index: number) => (
-                          <label key={parcel.parcelId || index} className="flex items-start gap-3 rounded-xl border border-border p-4 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={selectedParcelIds.includes(parcel.parcelId)}
-                              onChange={(e) => {
-                                const checked = e.target.checked
-                                setSelectedParcelIds((prev) =>
-                                  checked
-                                    ? [...prev, parcel.parcelId]
-                                    : prev.filter((id) => id !== parcel.parcelId)
-                                )
-                              }}
-                              className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                            />
-                            <div className="space-y-1">
-                              <div className="flex flex-wrap gap-2 items-center">
-                                <span className="font-semibold text-foreground">{parcel.parcelId || `Parcel ${index + 1}`}</span>
-                                <Badge variant="secondary">{parcel.status || "Unknown"}</Badge>
+                      <p className="text-sm font-semibold text-foreground">Parcel Updates</p>
+                      <div className="space-y-3">
+                        {Array.isArray(shipment.parcels) && shipment.parcels.length > 0 ? (
+                          shipment.parcels.map((parcel: any, index: number) => (
+                            <label key={parcel.parcelId || index} className="flex items-start gap-3 rounded-xl border border-border p-4 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={selectedParcelIds.includes(parcel.parcelId)}
+                                onChange={(e) => {
+                                  const checked = e.target.checked
+                                  setSelectedParcelIds((prev) =>
+                                    checked
+                                      ? [...prev, parcel.parcelId]
+                                      : prev.filter((id) => id !== parcel.parcelId)
+                                  )
+                                }}
+                                className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                              />
+                              <div className="space-y-1">
+                                <div className="flex flex-wrap gap-2 items-center">
+                                  <span className="font-semibold text-foreground">{parcel.parcelId || `Parcel ${index + 1}`}</span>
+                                  <Badge variant="secondary">{parcel.status || "Unknown"}</Badge>
+                                </div>
+                                <p className="text-sm text-foreground/70">Supplier: {parcel.supplierName || parcel.companyName || "Unknown"}</p>
+                                {parcel.updatedBy ? (
+                                  <p className="text-sm text-foreground/60">Updated by: {parcel.updatedBy.fullName || parcel.updatedBy}</p>
+                                ) : null}
                               </div>
-                              <p className="text-sm text-foreground/70">Supplier: {parcel.supplierName || parcel.companyName || "Unknown"}</p>
-                              {parcel.updatedBy ? (
-                                <p className="text-sm text-foreground/60">Updated by: {parcel.updatedBy.fullName || parcel.updatedBy}</p>
-                              ) : null}
-                            </div>
-                          </label>
-                        ))
-                      ) : (
-                        <p className="text-sm text-foreground/60">No parcels available for this consolidation shipment.</p>
-                      )}
+                            </label>
+                          ))
+                        ) : (
+                          <p className="text-sm text-foreground/60">No parcels available for this consolidation shipment.</p>
+                        )}
+                      </div>
                     </div>
+                  ) : null}
+                  {actionMessage ? <p className="text-sm text-foreground/70">{actionMessage}</p> : null}
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => {
+                      setReceiveLocation("")
+                      setReceiveNotes("")
+                      setSelectedParcelIds([])
+                    }}>Reset</Button>
+                    <Button onClick={handleMarkReceived}>Mark Received</Button>
                   </div>
-                ) : null}
-                {actionMessage ? <p className="text-sm text-foreground/70">{actionMessage}</p> : null}
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => {
-                    setReceiveLocation("")
-                    setReceiveNotes("")
-                    setSelectedParcelIds([])
-                  }}>Reset</Button>
-                  <Button onClick={handleMarkReceived}>Mark Received</Button>
-                </div>
+                </>
+                }
               </CardContent>
             </Card>
           </div>

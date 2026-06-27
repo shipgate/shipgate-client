@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Search, Check } from "lucide-react"
 import { useAuthStore } from "@/store/auth"
 import { assignShipmentPricing, getAdminShipments, markPackageAsReceived } from "@/lib/shipping-api"
+import { formatStatusLabel, getStatusBadgeClass } from "@/lib/shipment-helpers"
 
 export default function ShipmentsContent() {
   const token = useAuthStore((state) => state.token)
@@ -123,6 +124,8 @@ export default function ShipmentsContent() {
     }
   }
 
+  const getStatusClass = (status: string) => getStatusBadgeClass(status)
+
   return (
     <div className="space-y-6">
       <div>
@@ -190,8 +193,8 @@ export default function ShipmentsContent() {
                       <td className="py-3 px-4">{shipment.customerId?.fullName || shipment.customer || "Unknown"}</td>
                       <td className="py-3 px-4">{shipment.shipmentType || shipment.type || "Unknown"}</td>
                       <td className="py-3 px-4">
-                        <Badge variant={shipment.currentStatus === "DELIVERED" ? "default" : "secondary"}>
-                          {shipment.currentStatus || shipment.status || "Unknown"}
+                        <Badge className={getStatusClass(String(shipment.currentStatus))}>
+                          {formatStatusLabel(shipment.currentStatus)}
                         </Badge>
                       </td>
                       <td className="py-3 px-4">{shipment.deliveryMethod || "N/A"}</td>

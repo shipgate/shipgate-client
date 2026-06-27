@@ -192,11 +192,11 @@ export default function ShipmentDetailsPage() {
                 </div>
                 <div>
                   <p className="text-foreground/60 text-sm">Payment Status</p>
-                  <p className="text-lg font-semibold text-foreground">{shipment.paymentStatus || shipment.currentStatus || "Pending"}</p>
+                  <p className="text-lg font-semibold text-foreground">{shipment.pricing.status === "ASSIGNED" ? "Awaiting Payment" : "Pending"}</p>
                 </div>
-                <div>
+                <div> 
                   <p className="text-foreground/60 text-sm">Price</p>
-                  <p className="text-lg font-semibold text-primary">{priceLabel}</p>
+                  <p className="text-lg font-semibold text-primary">{shipment.pricing.totalPrice ? `₦${shipment.pricing.totalPrice.toLocaleString()}` : "Pending"}</p>
                 </div>
               </div>
             </CardContent>

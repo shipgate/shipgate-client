@@ -128,7 +128,7 @@ export default function ShipmentsPage() {
                     const route = shipment.shipmentMethod || shipment.type || ""
                     const itemType = shipment.shipmentType || shipment.type || ""
                     const delivery = shipment.deliveryMethod || ""
-                    const cost = shipment.pricing?.basePrice ? `$${shipment.pricing.basePrice}` : shipment.totalAmount || "Pending"
+                    const cost = shipment.pricing?.totalPrice ? `₦${shipment.pricing.totalPrice.toLocaleString()}` : shipment.basePrice || "Pending"
                     const status = shipment.currentStatus || "Unknown"
 
                     return (

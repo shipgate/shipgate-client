@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Search, Check } from "lucide-react"
 import { useAuthStore } from "@/store/auth"
 import { assignShipmentPricing, getAdminShipments, markPackageAsReceived } from "@/lib/shipping-api"
+import { formatStatusLabel, getStatusBadgeClass } from "@/lib/shipment-helpers"
 
 export default function ShipmentsContent() {
   const token = useAuthStore((state) => state.token)
@@ -123,6 +124,8 @@ export default function ShipmentsContent() {
     }
   }
 
+  const getStatusClass = (status: string) => getStatusBadgeClass(status)
+
   return (
     <div className="space-y-6">
       <div>
@@ -149,11 +152,14 @@ export default function ShipmentsContent() {
               className="px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="all">All Status</option>
-              <option value="pending">Pending</option>
               <option value="pending_pickup">Pending Pickup</option>
+              <option value="package_received">Package Received</option>
+              <option value="in_customs">In Customs</option>
               <option value="in_transit">In Transit</option>
+              <option value="arrived_customs">Arrived NGN Customs</option>
               <option value="arrived_warehouse">Arrived Warehouse</option>
-              <option value="pending_delivery">Pending Delivery</option>
+              <option value="out_for_delivery">Out for Delivery</option>
+              <option value="delivered">DELIVERED</option>
             </select>
           </div>
         </CardContent>
@@ -190,8 +196,8 @@ export default function ShipmentsContent() {
                       <td className="py-3 px-4">{shipment.customerId?.fullName || shipment.customer || "Unknown"}</td>
                       <td className="py-3 px-4">{shipment.shipmentType || shipment.type || "Unknown"}</td>
                       <td className="py-3 px-4">
-                        <Badge variant={shipment.currentStatus === "DELIVERED" ? "default" : "secondary"}>
-                          {shipment.currentStatus || shipment.status || "Unknown"}
+                        <Badge className={getStatusClass(String(shipment.currentStatus))}>
+                          {formatStatusLabel(shipment.currentStatus)}
                         </Badge>
                       </td>
                       <td className="py-3 px-4">{shipment.deliveryMethod || "N/A"}</td>
@@ -199,7 +205,7 @@ export default function ShipmentsContent() {
                         {shipment.pricing?.totalPrice ? `$${shipment.pricing.totalPrice}` : shipment.totalAmount ? `$${shipment.totalAmount}` : "Pending"}
                       </td>
                       <td className="py-3 px-4 flex flex-wrap gap-2">
-                        <Link href={`/super-admin/shipments/${encodeURIComponent(shipment.shipmentNumber || shipment.id)}`}>
+                        <Link href={`/admin/shipments/${encodeURIComponent(shipment.shipmentNumber || shipment.id)}`}>
                           <Button variant="secondary" size="sm">View</Button>
                         </Link>
                         {/* <Button

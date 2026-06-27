@@ -34,6 +34,8 @@ async function request<T = ApiResponse>(path: string, options: RequestInit & { t
   return data as T
 }
 
+
+
 export async function signupCustomer(payload: {
   fullName: string
   email: string

@@ -11,6 +11,27 @@ interface ShippingResponse<T = unknown> {
   [key: string]: unknown
 }
 
+export type TrackingStage =
+  | "PACKAGE_RECEIVED"
+  | "IN_CUSTOMS"
+  | "IN_TRANSIT"
+  | "ARRIVED_NIGERIAN_CUSTOMS"
+  | "ARRIVED_WAREHOUSE"
+  | "PENDING_DELIVERY"
+
+export type TrackingStageStatus = "PENDING" | "COMPLETED"
+
+export interface TrackingStageUpdatePayload {
+  stage: TrackingStage
+  status: TrackingStageStatus
+  location?: string
+  notes?: string
+  parcelUpdates?: Array<{
+    parcelId: string
+    status: TrackingStage | string
+  }>
+}
+
 async function request<T = ShippingResponse>(path: string, options: ShippingApiOptions = {}) {
   const { token, ...restOptions } = options
   const headers: Record<string, string> = {
@@ -84,6 +105,21 @@ export async function markPackageAsReceived(shipmentNumber: string, payload: unk
     body: JSON.stringify(payload),
     token,
   })
+}
+
+export async function updateTrackingStage(
+  shipmentNumber: string,
+  payload: TrackingStageUpdatePayload,
+  token: string,
+) {
+  return request<ShippingResponse>(
+    `/api/v1/shipping/admin/shipments/${encodeURIComponent(shipmentNumber)}/update-tracking`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      token,
+    },
+  )
 }
 
 export async function assignShipmentPricing(shipmentNumber: string, payload: unknown, token: string) {

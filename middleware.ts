@@ -29,7 +29,7 @@ export function middleware(request: NextRequest) {
       return response
     }
 
-    // Optional: Simple role-based access check using cookie
+    // role-based access check using cookie
     if (pathname.startsWith('/super-admin') && userRole !== 'super_admin') {
       return NextResponse.redirect(new URL('/login', request.url))
     }
