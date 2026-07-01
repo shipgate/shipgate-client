@@ -118,11 +118,11 @@ export default function AdminShipmentDetailsPage() {
   }
 
   const currentPriceLabel = shipment?.pricing?.totalPrice
-    ? `$${shipment.pricing.totalPrice}`
+    ? `₦${shipment.pricing.totalPrice.toLocaleString()}`
     : shipment?.pricing?.basePrice
-    ? `$${shipment.pricing.basePrice}`
+    ? `₦${shipment.pricing.basePrice.toLocaleString()}`
     : shipment?.totalAmount
-    ? `$${shipment.totalAmount}`
+    ? `₦${shipment.totalAmount.toLocaleString()}`
     : "Pending"
 
   return (
