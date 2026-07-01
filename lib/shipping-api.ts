@@ -92,6 +92,7 @@ export async function getAdminShipments(
   shipmentType?: string,
   shipmentMethod?: string,
   customerId?: string,
+  deliveryMethod?: string
 ) {
   const query = new URLSearchParams({
     page: String(page),
@@ -102,6 +103,7 @@ export async function getAdminShipments(
   if (shipmentType) query.set('shipmentType', shipmentType)
   if (shipmentMethod) query.set('shipmentMethod', shipmentMethod)
   if (customerId) query.set('customerId', customerId)
+  if (deliveryMethod) query.set('deliveryMethod', deliveryMethod)
 
   return request<PaginatedShippingResponse<any[]>>(`/api/v1/shipping/admin/shipments?${query.toString()}`, {
     method: 'GET',
@@ -115,6 +117,45 @@ export async function markPackageAsReceived(shipmentNumber: string, payload: unk
   )}/package-received`, {
     method: 'PUT',
     body: JSON.stringify(payload),
+    token,
+  })
+}
+
+export async function assignCourierToShipment(shipmentNumber: string, payload: { courierId: string }, token: string) {
+  return request<ShippingResponse>(`/api/v1/shipping/admin/shipments/${encodeURIComponent(shipmentNumber)}/assign-courier`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    token,
+  })
+}
+
+export async function getCourierShipments(token: string, page = 1, limit = 10) {
+  return request<PaginatedShippingResponse<any[]>>(`/api/v1/shipping/courier/shipments?page=${page}&limit=${limit}`, {
+    method: 'GET',
+    token,
+  })
+}
+
+export async function markCourierShipmentOutForDelivery(
+  shipmentNumber: string,
+  payload: { location?: string; notes?: string },
+  token: string,
+) {
+  return request<ShippingResponse>(`/api/v1/shipping/courier/shipments/${encodeURIComponent(shipmentNumber)}/out-for-delivery`, {
+    method: 'POST',
+    body: JSON.stringify(payload || {}),
+    token,
+  })
+}
+
+export async function markCourierShipmentCompleted(
+  shipmentNumber: string,
+  payload: { location?: string; notes?: string },
+  token: string,
+) {
+  return request<ShippingResponse>(`/api/v1/shipping/courier/shipments/${encodeURIComponent(shipmentNumber)}/complete`, {
+    method: 'POST',
+    body: JSON.stringify(payload || {}),
     token,
   })
 }

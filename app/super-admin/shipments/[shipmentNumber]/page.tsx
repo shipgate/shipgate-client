@@ -43,7 +43,7 @@ export default function SuperAdminShipmentDetailsPage() {
       setItems(Array.isArray((response as any).data?.items) ? (response as any).data.items : [])
       if (data?.pricing) {
         setAssignedPrice(data.pricing.basePrice ? String(data.pricing.basePrice) : "")
-        setCurrency(data.pricing.currency || "USD")
+        setCurrency(data.pricing.currency || "NGN")
       }
       if (data?.shipmentType === "CONSOLIDATION" && Array.isArray(data.parcels) && data.parcels.length > 0) {
         setSelectedParcelIds([])

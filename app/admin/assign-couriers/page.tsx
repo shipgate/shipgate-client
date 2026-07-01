@@ -1,49 +1,94 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2 } from "lucide-react"
+import { CheckCircle2, Loader2, RefreshCw } from "lucide-react"
+import { useAuthStore } from "@/store/auth"
+import { assignCourierToShipment, getAdminShipments } from "@/lib/shipping-api"
+import { getUsers } from "@/lib/auth-api"
+
+interface CourierOption {
+  _id: string
+  fullName: string
+  phone?: string
+  email?: string
+}
+
+interface ShipmentOption {
+  _id: string
+  shipmentNumber: string
+  deliveryMethod?: string
+  currentStatus?: string
+  assignedCourier?: { _id?: string; fullName?: string; email?: string; phone?: string } | null
+  customerId?: { fullName?: string; email?: string; phone?: string } | null
+  createdAt?: string
+}
 
 export default function AssignCouriers() {
+  const token = useAuthStore((state) => state.token)
   const [selectedShipments, setSelectedShipments] = useState<string[]>([])
-  const [selectedCourier, setSelectedCourier] = useState<number | null>(null)
+  const [selectedCourier, setSelectedCourier] = useState<string | null>(null)
   const [assignmentComplete, setAssignmentComplete] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [message, setMessage] = useState("")
+  const [shipments, setShipments] = useState<ShipmentOption[]>([])
+  const [couriers, setCouriers] = useState<CourierOption[]>([])
 
-  const homeDeliveryShipments = [
-    { id: "SHP-2024-001", customer: "John Doe", address: "123 Lekki Road", weight: "5kg", status: "at_warehouse" },
-    {
-      id: "SHP-2024-004",
-      customer: "Mary Johnson",
-      address: "456 Victoria Island",
-      weight: "3kg",
-      status: "at_warehouse",
-    },
-    { id: "SHP-2024-007", customer: "Ahmed Hassan", address: "789 Ikoyi Drive", weight: "8kg", status: "at_warehouse" },
-  ]
+  const loadData = async () => {
+    if (!token) return
+    setLoading(true)
+    setError("")
+    try {
+      const [shipmentsResponse, couriersResponse] = await Promise.all([
+        getAdminShipments(token, 1, 50, undefined, undefined,  undefined, undefined, "HOME_DELIVERY"),
+        getUsers("courier", token, 1, 100),
+      ])
+      const shipmentData = ((shipmentsResponse as any).data || []) as ShipmentOption[]
+      const courierData = ((couriersResponse as any).users || []) as CourierOption[]
+      setShipments(shipmentData.filter((item) => item.deliveryMethod === "HOME_DELIVERY"))
+      setCouriers(courierData)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load data.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const couriers = [
-    { id: 1, name: "Chinedu Okafor", phone: "08012345678", assignedCount: 5 },
-    { id: 2, name: "Blessing Eze", phone: "08087654321", assignedCount: 3 },
-    { id: 3, name: "Funmi Adeyemi", phone: "08098765432", assignedCount: 6 },
-  ]
+  useEffect(() => {
+    loadData()
+  }, [token])
 
   const toggleShipment = (id: string) => {
     setSelectedShipments((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]))
   }
 
-  const handleAssign = () => {
-    if (selectedShipments.length > 0 && selectedCourier) {
-      console.log(`[v0] Assigning ${selectedShipments.length} shipments to courier ${selectedCourier}`)
+  const handleAssign = async () => {
+    if (!token || selectedShipments.length === 0 || !selectedCourier) return
+    setError("")
+    setMessage("")
+    setLoading(true)
+    try {
+      await Promise.all(selectedShipments.map((shipmentNumber) => assignCourierToShipment(shipmentNumber, { courierId: selectedCourier }, token)))
+      setMessage(`Assigned ${selectedShipments.length} shipment(s) successfully.`)
       setAssignmentComplete(true)
-      setTimeout(() => {
-        setAssignmentComplete(false)
-        setSelectedShipments([])
-        setSelectedCourier(null)
-      }, 2000)
+      setSelectedShipments([])
+      setSelectedCourier(null)
+      await loadData()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to assign courier.")
+    } finally {
+      setLoading(false)
     }
   }
+
+  const homeDeliveryShipments = useMemo(
+    () =>
+      shipments.filter((shipment) => shipment.deliveryMethod === "HOME_DELIVERY" && !shipment.assignedCourier?._id),
+    [shipments],
+  )
 
   return (
     <div className="space-y-6">
@@ -52,47 +97,55 @@ export default function AssignCouriers() {
         <p className="text-foreground/60">Select home delivery shipments and assign to a courier</p>
       </div>
 
-      {/* Couriers Selection */}
       <Card>
         <CardHeader>
           <CardTitle>Select Courier</CardTitle>
           <CardDescription>Choose a courier to assign the selected shipments</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="flex justify-end mb-4">
+            <Button variant="outline" size="sm" onClick={() => loadData()} disabled={loading}>
+              <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+            </Button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {couriers.map((courier) => (
               <button
-                key={courier.id}
-                onClick={() => setSelectedCourier(courier.id)}
+                key={courier._id}
+                onClick={() => setSelectedCourier(courier._id)}
                 className={`p-4 border-2 rounded-lg transition-all text-left ${
-                  selectedCourier === courier.id
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-primary/50"
+                  selectedCourier === courier._id ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
                 }`}
               >
-                <p className="font-semibold text-foreground">{courier.name}</p>
-                <p className="text-sm text-foreground/60 mb-3">{courier.phone}</p>
-                <Badge variant="outline">{courier.assignedCount} assigned</Badge>
+                <p className="font-semibold text-foreground">{courier.fullName}</p>
+                <p className="text-sm text-foreground/60 mb-3">{courier.phone || courier.email}</p>
+                <Badge variant="outline">Courier</Badge>
               </button>
             ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Pending Home Deliveries */}
       <Card>
         <CardHeader>
           <CardTitle>Home Delivery Shipments at Warehouse</CardTitle>
           <CardDescription>Select shipments to assign to the selected courier</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-8 text-foreground/70">
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading shipments...
+            </div>
+          ) : null}
+          {error ? <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{error}</div> : null}
+          {message ? <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">{message}</div> : null}
           <div className="space-y-3">
             {homeDeliveryShipments.map((shipment) => (
               <button
-                key={shipment.id}
-                onClick={() => toggleShipment(shipment.id)}
+                key={shipment.shipmentNumber}
+                onClick={() => toggleShipment(shipment.shipmentNumber)}
                 className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
-                  selectedShipments.includes(shipment.id)
+                  selectedShipments.includes(shipment.shipmentNumber)
                     ? "border-primary bg-primary/10"
                     : "border-border hover:border-primary/50"
                 }`}
@@ -100,31 +153,29 @@ export default function AssignCouriers() {
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <p className="font-semibold text-foreground">{shipment.id}</p>
-                      <Badge variant="outline">{shipment.status}</Badge>
+                      <p className="font-semibold text-foreground">{shipment.shipmentNumber}</p>
+                      <Badge variant="outline">{shipment.currentStatus || "ARRIVED_WAREHOUSE"}</Badge>
                     </div>
-                    <p className="text-sm text-foreground/60">{shipment.customer}</p>
-                    <p className="text-sm text-foreground/60 mt-1">{shipment.address}</p>
+                    <p className="text-sm text-foreground/60">{shipment.customerId?.fullName || "Customer"}</p>
+                    <p className="text-sm text-foreground/60 mt-1">{shipment.customerId?.phone || shipment.customerId?.email || "—"}</p>
                   </div>
-                  <span className="text-sm font-medium text-foreground/60">{shipment.weight}</span>
                 </div>
               </button>
             ))}
           </div>
 
-          {/* Assign Button */}
           <div className="pt-4 border-t border-border">
             <Button
               onClick={handleAssign}
-              disabled={selectedShipments.length === 0 || !selectedCourier}
+              disabled={selectedShipments.length === 0 || !selectedCourier || loading}
               className="w-full bg-primary hover:bg-primary/90 text-white h-12 font-semibold"
             >
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Assign {selectedShipments.length > 0 ? `${selectedShipments.length} Shipment(s)` : "Shipments"} to Courier
             </Button>
             {(!selectedCourier || selectedShipments.length === 0) && (
               <p className="text-sm text-foreground/60 mt-2">
-                {!selectedCourier && "Please select a courier"}{" "}
-                {selectedShipments.length === 0 && "Please select shipments"}
+                {!selectedCourier && "Please select a courier"} {selectedShipments.length === 0 && "Please select shipments"}
               </p>
             )}
           </div>
@@ -138,6 +189,43 @@ export default function AssignCouriers() {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Assigned Courier Summary</CardTitle>
+          <CardDescription>Home delivery shipments with their assigned courier and delivery progress</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-foreground/70">
+                  <th className="px-3 py-2 font-medium">Shipment</th>
+                  <th className="px-3 py-2 font-medium">Customer</th>
+                  <th className="px-3 py-2 font-medium">Assigned courier</th>
+                  <th className="px-3 py-2 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shipments
+                  .filter((shipment) => shipment.deliveryMethod === "HOME_DELIVERY")
+                  .map((shipment) => (
+                    <tr key={shipment.shipmentNumber} className="border-b border-border/60 last:border-0">
+                      <td className="px-3 py-3 font-medium text-foreground">{shipment.shipmentNumber}</td>
+                      <td className="px-3 py-3 text-foreground/70">{shipment.customerId?.fullName || "Customer"}</td>
+                      <td className="px-3 py-3 text-foreground/70">{shipment.assignedCourier?.fullName || "Unassigned"}</td>
+                      <td className="px-3 py-3">
+                        <Badge variant={shipment.currentStatus === "COMPLETED" ? "default" : "outline"}>
+                          {shipment.currentStatus === "COMPLETED" ? "Completed" : shipment.currentStatus === "OUT_FOR_DELIVERY" ? "Out for delivery" : "Pending"}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -1,22 +1,48 @@
 "use client"
 
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, Clock, MapPin, Package } from "lucide-react"
+import { CheckCircle2, Clock, Loader2, MapPin, Package } from "lucide-react"
+import { useAuthStore } from "@/store/auth"
+import { getCourierShipments } from "@/lib/shipping-api"
 
 export default function CourierDashboard() {
-  const stats = [
-    { label: "Today's Deliveries", value: "8", icon: Package, color: "bg-blue-100 text-blue-700" },
-    { label: "In Progress", value: "3", icon: Clock, color: "bg-orange-100 text-orange-700" },
-    { label: "Completed", value: "5", icon: CheckCircle2, color: "bg-green-100 text-green-700" },
-    { label: "Earnings", value: "₦12,500", icon: MapPin, color: "bg-purple-100 text-purple-700" },
-  ]
+  const token = useAuthStore((state) => state.token)
+  const [shipments, setShipments] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
-  const todayDeliveries = [
-    { id: "SHP-2024-001", customer: "John Doe", address: "123 Lekki Road", status: "pending" },
-    { id: "SHP-2024-004", customer: "Mary Johnson", address: "456 Victoria Island", status: "pending" },
-    { id: "SHP-2024-007", customer: "Ahmed Hassan", address: "789 Ikoyi Drive", status: "in_progress" },
-  ]
+  const loadShipments = async () => {
+    if (!token) return
+    setLoading(true)
+    setError("")
+    try {
+      const response = await getCourierShipments(token, 1, 50)
+      const data = ((response as any).data || []) as any[]
+      setShipments(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load assigned shipments.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadShipments()
+  }, [token])
+
+  const stats = useMemo(() => {
+    const total = shipments.length
+    const inProgress = shipments.filter((item) => item.currentStatus === "OUT_FOR_DELIVERY").length
+    const completed = shipments.filter((item) => item.currentStatus === "COMPLETED").length
+    return [
+      { label: "Assigned Deliveries", value: String(total), icon: Package, color: "bg-blue-100 text-blue-700" },
+      { label: "In Progress", value: String(inProgress), icon: Clock, color: "bg-orange-100 text-orange-700" },
+      { label: "Completed", value: String(completed), icon: CheckCircle2, color: "bg-green-100 text-green-700" },
+      { label: "Warehouse", value: String(shipments.filter((item) => item.currentStatus === "ARRIVED_WAREHOUSE").length), icon: MapPin, color: "bg-purple-100 text-purple-700" },
+    ]
+  }, [shipments])
 
   return (
     <div className="space-y-6">
@@ -25,7 +51,6 @@ export default function CourierDashboard() {
         <p className="text-foreground/60">Manage your assigned deliveries</p>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon
@@ -47,48 +72,50 @@ export default function CourierDashboard() {
         })}
       </div>
 
-      {/* Today's Deliveries */}
       <Card>
         <CardHeader>
-          <CardTitle>Today's Assigned Deliveries</CardTitle>
-          <CardDescription>Tap on a delivery to update its status</CardDescription>
+          <CardTitle>Assigned Deliveries</CardTitle>
+          <CardDescription>Track the home delivery shipments assigned to you</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {todayDeliveries.map((delivery) => (
-              <div
-                key={delivery.id}
-                className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-semibold text-foreground">{delivery.id}</p>
-                    <p className="text-sm text-foreground/60">{delivery.customer}</p>
+          {loading ? (
+            <div className="flex items-center justify-center py-8 text-foreground/70">
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading shipments...
+            </div>
+          ) : error ? (
+            <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+          ) : shipments.length === 0 ? (
+            <p className="text-sm text-foreground/60">No assigned deliveries yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {shipments.map((delivery) => (
+                <div key={delivery.shipmentNumber} className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="font-semibold text-foreground">{delivery.shipmentNumber}</p>
+                      <p className="text-sm text-foreground/60">{delivery.customerId?.fullName || "Customer"}</p>
+                    </div>
+                    <Badge variant={delivery.currentStatus === "COMPLETED" ? "default" : "outline"}>
+                      {delivery.currentStatus === "COMPLETED" ? "Completed" : delivery.currentStatus === "OUT_FOR_DELIVERY" ? "Out for delivery" : "Pending"}
+                    </Badge>
                   </div>
-                  <Badge variant={delivery.status === "in_progress" ? "default" : "outline"}>
-                    {delivery.status === "in_progress" ? "In Progress" : "Pending"}
-                  </Badge>
+                  <div className="flex items-center gap-1 text-sm text-foreground/60">
+                    <MapPin className="w-4 h-4" />
+                    {delivery.customerId?.address || "Customer address"}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 text-sm text-foreground/60">
-                  <MapPin className="w-4 h-4" />
-                  {delivery.address}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Quick Action */}
       <Card>
         <CardHeader>
           <CardTitle>Quick Action</CardTitle>
         </CardHeader>
         <CardContent>
-          <a
-            href="/courier/update-delivery"
-            className="w-full p-3 bg-primary text-white rounded-lg text-center font-semibold hover:bg-primary/90 transition-colors block"
-          >
+          <a href="/courier/update-delivery" className="w-full p-3 bg-primary text-white rounded-lg text-center font-semibold hover:bg-primary/90 transition-colors block">
             Update Delivery Status
           </a>
         </CardContent>

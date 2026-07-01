@@ -146,7 +146,7 @@ export default function AddShipmentPage() {
         quantity: Number(item.quantity) || 1,
         weight: Number(item.weight) || 0,
         unitPrice: Number(item.value) || 0,
-        currency: "USD",
+        currency: "NGN",
       }))
     }
 

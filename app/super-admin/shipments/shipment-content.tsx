@@ -23,7 +23,7 @@ export default function ShipmentsContent() {
   const [showPriceModal, setShowPriceModal] = useState(false)
   const [shipmentToPrice, setShipmentToPrice] = useState<string | null>(null)
   const [assignedPrice, setAssignedPrice] = useState("")
-  const [currency, setCurrency] = useState("USD")
+  const [currency, setCurrency] = useState("NGN")
   const [charges, setCharges] = useState([{ description: "", amount: "" }])
   const [showReceivedModal, setShowReceivedModal] = useState(false)
   const [selectedShipmentForReceive, setSelectedShipmentForReceive] = useState<any>(null)
