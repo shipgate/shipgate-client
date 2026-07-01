@@ -26,7 +26,7 @@ export default function SuperAdminShipmentDetailsPage() {
   const [message, setMessage] = useState("")
   const [actionMessage, setActionMessage] = useState("")
   const [assignedPrice, setAssignedPrice] = useState("")
-  const [currency, setCurrency] = useState("USD")
+  const [currency, setCurrency] = useState("NGN")
   const [charges, setCharges] = useState([{ description: "", amount: "" }])
   const [receiveLocation, setReceiveLocation] = useState("")
   const [receiveNotes, setReceiveNotes] = useState("")
@@ -118,11 +118,11 @@ export default function SuperAdminShipmentDetailsPage() {
   }
 
   const currentPriceLabel = shipment?.pricing?.totalPrice
-    ? `$${shipment.pricing.totalPrice}`
+    ? `₦${shipment.pricing.totalPrice.toLocaleString()}`
     : shipment?.pricing?.basePrice
-    ? `$${shipment.pricing.basePrice}`
+    ? `₦${shipment.pricing.basePrice.toLocaleString()}`
     : shipment?.totalAmount
-    ? `$${shipment.totalAmount}`
+    ? `₦${shipment.totalAmount.toLocaleString()}`
     : "Pending"
 
   return (
@@ -169,7 +169,7 @@ export default function SuperAdminShipmentDetailsPage() {
                   <Badge className={getStatusBadgeClass(String(shipment.currentStatus || shipment.status || "Unknown"))}>
                     {formatStatusLabel(shipment.currentStatus || shipment.status || "Unknown")}
                   </Badge>
-                  <p className="text-sm text-foreground/60">Created: {shipment.createdAt ? new Date(shipment.createdAt).toLocaleDateString() : "N/A"}</p>
+                  <p className="text-sm text-foreground/60">Created: {shipment.createdAt ? new Date(shipment.createdAt).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "N/A"}</p>
                 </div>
               </div>
             </CardHeader>

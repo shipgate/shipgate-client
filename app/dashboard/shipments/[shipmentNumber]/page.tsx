@@ -124,7 +124,7 @@ export default function ShipmentDetailsPage() {
     try {
       await cancelShipment(shipmentNumber, cancelReason, token)
       setMessage("Shipment canceled successfully.")
-      loadShipment()
+      router.push("/dashboard/shipments")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to cancel shipment.")
     } finally {

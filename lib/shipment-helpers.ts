@@ -1,15 +1,17 @@
 // Timeline stages in order
 const TIMELINE_STAGES = [
-  { stage: "SHIPMENT_CREATED", label: "Shipment Created" },
-  { stage: "PACKAGE_RECEIVED", label: "Package Received" },
-  { stage: "IN_CUSTOMS", label: "In Customs" },
-  { stage: "IN_TRANSIT", label: "In Transit" },
-  { stage: "ARRIVED_NIGERIAN_CUSTOMS", label: "Arrived Nigerian Customs" },
-  { stage: "ARRIVED_WAREHOUSE", label: "Arrived Warehouse" },
-  { stage: "PENDING_DELIVERY", label: "Pending Delivery" },
+  { stage: "SHIPMENT_CREATED", label: "Shipment Created", description: "We’ve received your shipment details and are expecting your package at our warehouse." },
+  { stage: "PACKAGE_RECEIVED", label: "Received at Shipgate Warehouse in China", description: "Your package has arrived at our warehouse and has been received, inspected, and processed." },
+  { stage: "IN_CUSTOMS", label: "Arrived at [location]", description: "Your shipment has arrived at [location] and is being prepared for international departure." },
+  { stage: "IN_TRANSIT", label: "In Transit", description: "Your shipment is in transit and has arrived at the [location]." },
+  { stage: "ARRIVED_NIGERIAN_CUSTOMS", label: "Arrived in Nigeria", description: "Your shipment has arrived at [location] and is awaiting customs clearance." },
+  { stage: "ARRIVED_WAREHOUSE", label: "Ready for Pickup", description: "Your shipment has arrived at our local Shipgate warehouse and is ready for pickup." },
+  { stage: "OUT_FOR_DELIVERY", label: "Out for Delivery", description: "Your shipment has been dispatched and is on its way to your delivery address." },
+  { stage: "COMPLETED", label: "Shipment Completed", description: "Your shipment has been successfully received by you and signed for." },
 ]
 
 interface ShipmentTimelineEvent {
+  stageKey?: string
   location: string
   status: string
   timestamp: string
@@ -28,33 +30,87 @@ const normalizeStage = (value: string | undefined) =>
     .toUpperCase()
     .replace(/[-\s]+/g, "_") || ""
 
-const getStageLabel = (stageKey: string) =>
+const getStageConfig = (stageKey: string) =>
   TIMELINE_STAGES.find(
     (stage) => normalizeStage(stage.stage) === stageKey || normalizeStage(stage.label) === stageKey
-  )?.label
+  )
 
 const getStageIndex = (stageKey: string) =>
   TIMELINE_STAGES.findIndex(
     (stage) => normalizeStage(stage.stage) === stageKey || normalizeStage(stage.label) === stageKey
   )
 
+const getShipmentMethod = (shipment: any) =>
+  String(shipment?.shipmentMethod || shipment?.shippingMethod || shipment?.shippingType || shipment?.method || "").toUpperCase()
+
+const isAirShipmentMethod = (shipment: any) => getShipmentMethod(shipment) === "AIR"
+
+const getDefaultTimelineLocation = (stageKey: string, shipment: any) => {
+  const normalizedStage = normalizeStage(stageKey)
+  const air = isAirShipmentMethod(shipment)
+
+  switch (normalizedStage) {
+    case "IN_CUSTOMS":
+      return air ? "Hong Kong Airport" : "Chinese Seaport"
+    case "IN_TRANSIT":
+      return "Addis Ababa transit hub"
+    case "ARRIVED_NIGERIAN_CUSTOMS":
+      return air ? "Lagos International Airport" : "Apapa sea port"
+    default:
+      return shipment?.currentLocation || shipment?.origin || "In Transit"
+  }
+}
+
+const getResolvedTimelineLocation = (stageKey: string, shipment: any, fallbackLocation?: string) => {
+  const explicitLocation = fallbackLocation?.toString().trim()
+  return explicitLocation || getDefaultTimelineLocation(stageKey, shipment)
+}
+
+const getResolvedStageText = (stageConfig: any, shipment: any, stageKey: string, location: string) => {
+  const baseLabel = stageConfig?.label || stageConfig?.stage || "Unknown"
+  const resolvedLabel = baseLabel.includes("[location]") ? baseLabel.replace("[location]", location) : baseLabel
+  let description = stageConfig?.description || ""
+
+  if (description.includes("[location]")) {
+    description = description.replace("[location]", location)
+  }
+
+  if (stageConfig?.stage === "ARRIVED_WAREHOUSE") {
+    const deliveryMethod = (shipment?.deliveryMethod || shipment?.delivery_type || "").toString().toUpperCase()
+    if (deliveryMethod === "HOME_DELIVERY") {
+      description = "Your shipment has arrived at our local Shipgate warehouse and is being prepared for delivery."
+    }
+  }
+
+  if (stageConfig?.stage === "OUT_FOR_DELIVERY") {
+    const deliveryMethod = (shipment?.deliveryMethod || shipment?.delivery_type || "").toString().toUpperCase()
+    if (deliveryMethod !== "HOME_DELIVERY") {
+      description = "Your shipment has been dispatched and is on its way to the next delivery milestone."
+    }
+  }
+
+  return { label: resolvedLabel, description }
+}
+
 function mapTrackingTimelineEvent(event: any, shipment: any): ShipmentTimelineEvent {
   const stageKey = normalizeStage(event.stage || event.status || event.stageName || event.type)
-  const statusLabel =
-    getStageLabel(stageKey) || event.label || event.stage || event.status || "Unknown"
+  const stageConfig = getStageConfig(stageKey)
+  const resolvedLocation = getResolvedTimelineLocation(stageKey, shipment, event.location)
+  const { label, description } = getResolvedStageText(stageConfig, shipment, stageKey, resolvedLocation)
 
   return {
-    location: event.location || shipment?.currentLocation || "In Transit",
-    status: statusLabel,
+    stageKey,
+    location: resolvedLocation,
+    status: label || event.label || event.stage || event.status || "Unknown",
     timestamp: event.completedAt || event.updatedAt || shipment?.updatedAt || new Date().toLocaleString(),
     completed:
       event.completed === true ||
       event.status === "COMPLETED" ||
       event.stageStatus === "COMPLETED" ||
-      ["DELIVERED", "PACKAGE_RECEIVED", "IN_CUSTOMS", "IN_TRANSIT", "ARRIVED_NIGERIAN_CUSTOMS", "ARRIVED_WAREHOUSE", "PENDING_DELIVERY", "SHIPMENT_CREATED"].includes(
+      ["DELIVERED", "PACKAGE_RECEIVED", "IN_CUSTOMS", "IN_TRANSIT", "ARRIVED_NIGERIAN_CUSTOMS", "ARRIVED_WAREHOUSE", "PENDING_DELIVERY", "SHIPMENT_CREATED", "COMPLETED"].includes(
         normalizeStage(event.status || event.stage),
       ),
-    details: event.notes || event.details || `${event.stage || event.status || "Stage"} updated`,
+    details: description || event.notes || event.details || `${event.stage || event.status || "Stage"} updated`,
     parcelUpdates: Array.isArray(event.parcelUpdates)
       ? event.parcelUpdates.map((update: any) => ({
           parcelId: update.parcelId,
@@ -78,7 +134,7 @@ export function buildTimelineFromShipment(shipment: any): ShipmentTimelineEvent[
     const eventsByStage = new Map<string, ShipmentTimelineEvent>()
 
     normalizedTimeline.forEach((event: ShipmentTimelineEvent) => {
-      const stageKey = normalizeStage(event.status)
+      const stageKey = event.stageKey || normalizeStage(event.status)
       eventsByStage.set(stageKey, event)
     })
 
@@ -102,17 +158,18 @@ export function buildTimelineFromShipment(shipment: any): ShipmentTimelineEvent[
 
       const isCompleted = currentStageIndex !== -1 && index <= currentStageIndex
       const isCurrent = index === currentStageIndex
+      const location = getResolvedTimelineLocation(stageConfig.stage, shipment, shipment?.currentLocation || shipment?.origin)
+      const { label, description } = getResolvedStageText(stageConfig, shipment, stageConfig.stage, location)
 
       return {
-        location: shipment?.currentLocation || shipment?.origin || "In Transit",
-        status: stageConfig.label,
+        stageKey,
+        location,
+        status: label,
         timestamp: isCompleted
           ? new Date(shipment?.updatedAt || shipment?.createdAt || Date.now()).toLocaleString()
           : "Pending",
         completed: isCompleted,
-        details: isCompleted
-          ? `${stageConfig.label} - ${isCurrent ? "Current stage" : "Completed"}`
-          : `${stageConfig.label} - Awaiting this stage`,
+        details: description || `${stageConfig.label} - ${isCurrent ? "Current stage" : "Completed"}`,
       }
     })
 
@@ -141,16 +198,16 @@ export function buildTimelineFromShipment(shipment: any): ShipmentTimelineEvent[
   TIMELINE_STAGES.forEach((stageConfig, index) => {
     const isCreatedStage = stageConfig.stage === "SHIPMENT_CREATED"
     const isCompleted = isCreatedStage || (currentStageIndex !== -1 && index <= currentStageIndex)
-    const isCurrent = index === currentStageIndex
+    const location = getResolvedTimelineLocation(stageConfig.stage, shipment, shipment?.currentLocation || shipment?.origin)
+    const { label, description } = getResolvedStageText(stageConfig, shipment, stageConfig.stage, location)
 
     timeline.push({
-      location: shipment?.currentLocation || "In Transit",
-      status: stageConfig.label,
+      stageKey: normalizeStage(stageConfig.stage),
+      location,
+      status: label,
       timestamp: isCompleted ? new Date(shipment?.updatedAt || shipment?.createdAt || Date.now()).toLocaleString() : "Pending",
       completed: isCompleted,
-      details: isCompleted
-        ? `${stageConfig.label} - ${isCurrent ? "Current stage" : "Completed"}`
-        : `${stageConfig.label} - Awaiting this stage`,
+      details: description || `${stageConfig.label} - ${isCompleted ? "Completed" : "Awaiting this stage"}`,
     })
   })
 

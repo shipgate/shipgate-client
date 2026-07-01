@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import type { PaginationInfo } from "@/lib/shipping-api"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -14,6 +15,7 @@ import { formatStatusLabel, getStatusBadgeClass } from "@/lib/shipment-helpers"
 export default function ShipmentsContent() {
   const token = useAuthStore((state) => state.token)
   const [shipments, setShipments] = useState<any[]>([])
+  const [pagination, setPagination] = useState<PaginationInfo>({ total: 0, page: 1, limit: 10, pages: 0 })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
@@ -30,13 +32,14 @@ export default function ShipmentsContent() {
   const [receiveNotes, setReceiveNotes] = useState("")
   const [actionMessage, setActionMessage] = useState("")
 
-  const loadShipments = async () => {
+  const loadShipments = async (page = 1) => {
     if (!token) return
     setLoading(true)
     setError("")
     try {
-      const response = await getAdminShipments(token, 1, 20)
+      const response = await getAdminShipments(token, page, pagination.limit)
       setShipments((response as any).data || [])
+      setPagination((response as any).pagination || { total: 0, page, limit: pagination.limit, pages: 0 })
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load shipments.")
     } finally {
@@ -45,7 +48,7 @@ export default function ShipmentsContent() {
   }
 
   useEffect(() => {
-    loadShipments()
+    loadShipments(1)
   }, [token])
 
   const filteredShipments = shipments.filter((shipment) => {
@@ -86,7 +89,7 @@ export default function ShipmentsContent() {
       setShowPriceModal(false)
       setAssignedPrice("")
       setCharges([{ description: "", amount: "" }])
-      loadShipments()
+      loadShipments(pagination.page)
     } catch (err) {
       setActionMessage(err instanceof Error ? err.message : "Unable to assign pricing.")
     }
@@ -118,7 +121,7 @@ export default function ShipmentsContent() {
       setReceiveLocation("")
       setReceiveNotes("")
       setParcelUpdates([{ parcelId: "", previousStatus: "", newStatus: "" }])
-      loadShipments()
+      loadShipments(pagination.page)
     } catch (err) {
       setActionMessage(err instanceof Error ? err.message : "Unable to mark package as received.")
     }
@@ -168,7 +171,7 @@ export default function ShipmentsContent() {
       <Card>
         <CardHeader>
           <CardTitle>Shipments ({loading ? "..." : filteredShipments.length})</CardTitle>
-          <CardDescription>Super-admin shipments with receive and pricing controls.</CardDescription>
+          <CardDescription>Admin shipments with receive and pricing controls.</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -202,7 +205,7 @@ export default function ShipmentsContent() {
                       </td>
                       <td className="py-3 px-4">{shipment.deliveryMethod || "N/A"}</td>
                       <td className="py-3 px-4 font-semibold text-primary">
-                        {shipment.pricing?.totalPrice ? `$${shipment.pricing.totalPrice}` : shipment.totalAmount ? `$${shipment.totalAmount}` : "Pending"}
+                        {shipment.pricing?.totalPrice ? `₦${shipment.pricing.totalPrice.toLocaleString()}` : shipment.totalAmount ? `₦${shipment.totalAmount.toLocaleString()}` : "Pending"}
                       </td>
                       <td className="py-3 px-4 flex flex-wrap gap-2">
                         <Link href={`/admin/shipments/${encodeURIComponent(shipment.shipmentNumber || shipment.id)}`}>
@@ -237,6 +240,22 @@ export default function ShipmentsContent() {
           )}
         </CardContent>
       </Card>
+
+      {pagination.pages > 1 ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-4">
+          <p className="text-sm text-muted-foreground">
+            Page {pagination.page} of {pagination.pages} • {pagination.total} total shipments
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => loadShipments(Math.max(1, pagination.page - 1))} disabled={pagination.page <= 1 || loading}>
+              Previous
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => loadShipments(Math.min(pagination.pages, pagination.page + 1))} disabled={pagination.page >= pagination.pages || loading}>
+              Next
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {showPriceModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-8">

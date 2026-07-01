@@ -1,6 +1,7 @@
 'use client';
 
 import { CheckCircle2, Circle, MapPin, Clock } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface TimelineEvent {
   location: string;
@@ -17,6 +18,17 @@ interface TrackingTimelineProps {
 }
 
 export function TrackingTimeline({ events }: TrackingTimelineProps) {
+  const formatTimestamp = (timestamp: string) => {
+    if (!timestamp || timestamp.toLowerCase() === "pending") return "Pending"
+    try {
+      const date = new Date(timestamp)
+      if (Number.isNaN(date.getTime())) return "Pending"
+      return format(date, "dd/MM/yyyy, HH:mm")
+    } catch {
+      return "Pending"
+    }
+  }
+
   return (
     <div className="space-y-6">
       {events.map((event, index) => (
@@ -38,23 +50,18 @@ export function TrackingTimeline({ events }: TrackingTimelineProps) {
             <div className="bg-white rounded-lg p-4 border border-border">
               <div className="flex items-start justify-between mb-2">
                 <h4 className="font-semibold text-foreground">{event.status}</h4>
-                <span className={`text-xs font-semibold px-2 py-1 rounded ${event.completed ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                {/* <span className={`text-xs font-semibold px-2 py-1 rounded ${event.completed ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
                   {event.completed ? 'Completed' : 'Pending'}
-                </span>
+                </span> */}
               </div>
 
               <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-foreground/70">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  <p>{event.location}</p>
-                </div>
+                <p className="text-foreground/80 ml-0">{event.details}</p>
 
                 <div className="flex items-center gap-2 text-foreground/70">
                   <Clock className="w-4 h-4 text-primary" />
-                  <p>{event.timestamp}</p>
+                  <p>{formatTimestamp(event.timestamp)}</p>
                 </div>
-
-                <p className="text-foreground/60 ml-6">{event.details}</p>
 
                 {Array.isArray(event.parcelUpdates) && event.parcelUpdates.length > 0 ? (
                   <div className="ml-6 rounded-lg border border-border bg-surface p-3 text-sm">

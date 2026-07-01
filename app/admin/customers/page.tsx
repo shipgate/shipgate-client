@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import type { PaginationInfo } from "@/lib/auth-api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,6 +24,7 @@ interface ConfirmDialogState {
 export default function ManageCustomers() {
   const { token } = useAuthStore()
   const [customers, setCustomers] = useState<AuthUser[]>([])
+  const [pagination, setPagination] = useState<PaginationInfo>({ total: 0, page: 1, limit: 10, pages: 0 })
   const [loading, setLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
@@ -35,14 +37,15 @@ export default function ManageCustomers() {
 
   useEffect(() => {
     if (token) {
-      fetchCustomers()
+      fetchCustomers(1)
     }
   }, [token])
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = async (page = 1) => {
     try {
-      const data = await getUsers("customer", token!)
-      setCustomers(data.users)
+      const data = await getUsers("customer", token!, page, pagination.limit)
+      setCustomers(data.users || [])
+      setPagination(data.pagination || { total: 0, page, limit: pagination.limit, pages: 0 })
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch customers")
     } finally {
@@ -57,7 +60,7 @@ export default function ManageCustomers() {
     try {
       await deleteUser(confirmDialog.id, token!)
       toast.success("Customer deleted successfully")
-      fetchCustomers()
+      fetchCustomers(pagination.page)
     } catch (err: any) {
       toast.error(err.message || "Failed to delete customer")
     } finally {
@@ -81,7 +84,7 @@ export default function ManageCustomers() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Customers ({customers.length})</CardTitle>
+          <CardTitle>Customers ({pagination.total || customers.length})</CardTitle>
           <CardDescription>All registered customers</CardDescription>
         </CardHeader>
         <CardContent>
@@ -140,6 +143,22 @@ export default function ManageCustomers() {
           </div>
         </CardContent>
       </Card>
+
+      {pagination.pages > 1 ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-4">
+          <p className="text-sm text-muted-foreground">
+            Page {pagination.page} of {pagination.pages} • {pagination.total} total customers
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => fetchCustomers(Math.max(1, pagination.page - 1))} disabled={pagination.page <= 1 || loading}>
+              Previous
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => fetchCustomers(Math.min(pagination.pages, pagination.page + 1))} disabled={pagination.page >= pagination.pages || loading}>
+              Next
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       <ConfirmationDialog
         open={confirmDialog.open}

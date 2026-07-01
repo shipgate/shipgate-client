@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { AlertCircle, CheckCircle2, Loader2, PackageCheck, Plus, Search, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -10,8 +10,10 @@ import { useAuthStore } from "@/store/auth"
 import {
   TrackingStage,
   TrackingStageStatus,
+  getShipmentDetails,
   updateTrackingStage,
 } from "@/lib/shipping-api"
+import { isAirShipment } from "@/lib/shipment-helpers"
 
 const TRACKING_STAGES: Array<{ value: TrackingStage; label: string; helper: string }> = [
   { value: "PACKAGE_RECEIVED", label: "Package Received", helper: "Shipment is confirmed at origin." },
@@ -23,7 +25,7 @@ const TRACKING_STAGES: Array<{ value: TrackingStage; label: string; helper: stri
     helper: "Shipment has reached Nigerian customs.",
   },
   { value: "ARRIVED_WAREHOUSE", label: "Arrived Warehouse", helper: "Shipment is available at the warehouse." },
-  { value: "PENDING_DELIVERY", label: "Pending Delivery", helper: "Shipment is queued for final delivery." },
+  { value: "OUT_FOR_DELIVERY", label: "Out for Delivery", helper: "Shipment is on its way to the recipient." },
 ]
 
 const STAGE_STATUSES: Array<{ value: TrackingStageStatus; label: string }> = [
@@ -61,6 +63,9 @@ export function StatusUpdateForm({
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
+  const [shipmentStatus, setShipmentStatus] = useState<string>("")
+  const [shipmentMethod, setShipmentMethod] = useState<string>("")
+  const [locationAutoFilled, setLocationAutoFilled] = useState(true)
 
   const selectedStage = TRACKING_STAGES.find((item) => item.value === stage)
   const canSubmit = Boolean(token && shipmentNumber.trim() && stage && status && !submitting)
@@ -84,7 +89,8 @@ export function StatusUpdateForm({
   const resetForm = () => {
     setStage("IN_TRANSIT")
     setStatus("COMPLETED")
-    setLocation("")
+    setLocation(getDefaultLocation("IN_TRANSIT", shipmentMethod))
+    setLocationAutoFilled(true)
     setNotes("")
     setParcelUpdates([{ parcelId: "", status: "" }])
   }
@@ -134,6 +140,55 @@ export function StatusUpdateForm({
     }
   }
 
+  const getDefaultLocation = (stage: TrackingStage, method: string) => {
+    const upperMethod = method?.toUpperCase() || ""
+    const air = isAirShipment(upperMethod)
+    const sea = !air
+
+    switch (stage) {
+      case "IN_CUSTOMS":
+        return air ? "Hong Kong Airport" : "Chinese Seaport"
+      case "IN_TRANSIT":
+        return "Addis Ababa transit hub"
+      case "ARRIVED_NIGERIAN_CUSTOMS":
+        return air ? "Lagos International Airport" : "Apapa sea port"
+      default:
+        return ""
+    }
+  }
+
+  const loadShipment = async (id: string) => {
+    if (!token || !id.trim()) return
+    try {
+      const response = await getShipmentDetails(id.trim(), token)
+      const data: any = (response as any).data?.shipment || (response as any).data || response
+      const method = String(data?.shipmentMethod || data?.shippingMethod || "").toUpperCase()
+      setShipmentStatus(data?.currentStatus || data?.status || "")
+      setShipmentMethod(method)
+
+      if (!location.trim() || locationAutoFilled) {
+        setLocation(getDefaultLocation(stage, method))
+        setLocationAutoFilled(true)
+      }
+    } catch (err: any) {
+      setError(err instanceof Error ? err.message : "Unable to fetch shipment details.")
+      setShipmentStatus("")
+      setShipmentMethod("")
+    }
+  }
+
+  useEffect(() => {
+    if (shipmentNumber.trim()) {
+      loadShipment(shipmentNumber)
+    }
+  }, [shipmentNumber, token])
+
+  useEffect(() => {
+    if (locationAutoFilled) {
+      setLocation(getDefaultLocation(stage, shipmentMethod))
+    }
+  }, [stage, shipmentMethod, locationAutoFilled])
+
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
@@ -152,7 +207,11 @@ export function StatusUpdateForm({
               <Search className="absolute left-3 top-4 w-4 h-4 text-foreground/40" />
               <Input
                 value={shipmentNumber}
-                onChange={(event) => setShipmentNumber(event.target.value)}
+                onChange={(event) => {
+                  setShipmentNumber(event.target.value)
+                  setError("")
+                  setMessage("")
+                }}
                 placeholder="SHIP-1685000000000-1"
                 className="h-12 pl-10 font-mono"
               />
@@ -175,7 +234,7 @@ export function StatusUpdateForm({
               <CardTitle>Tracking Stage</CardTitle>
               <CardDescription>{selectedStage?.helper}</CardDescription>
             </div>
-            <Badge className="w-fit">{status}</Badge>
+            <Badge className="w-fit">{shipmentStatus ? `Current status: ${shipmentStatus}` : status}</Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
@@ -200,31 +259,20 @@ export function StatusUpdateForm({
 
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-foreground">Status</label>
-              <select
-                value={status}
-                onChange={(event) => setStatus(event.target.value as TrackingStageStatus)}
-                className="h-12 w-full rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                {STAGE_STATUSES.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
               <label className="text-sm font-semibold text-foreground">Location</label>
               <Input
                 value={location}
-                onChange={(event) => setLocation(event.target.value)}
+                onChange={(event) => {
+                  setLocation(event.target.value)
+                  setLocationAutoFilled(false)
+                }}
                 placeholder="Beijing Sorting Center"
                 className="h-12"
               />
             </div>
           </div>
 
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <label className="text-sm font-semibold text-foreground">Notes</label>
             <textarea
               value={notes}
@@ -233,9 +281,9 @@ export function StatusUpdateForm({
               rows={4}
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
-          </div>
+          </div> */}
 
-          <div className="space-y-3">
+          {/* <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
                 <label className="text-sm font-semibold text-foreground">Parcel Updates</label>
@@ -274,7 +322,7 @@ export function StatusUpdateForm({
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
 
           {error ? (
             <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex gap-3 text-destructive">

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import type { PaginationInfo } from "@/lib/shipping-api"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -15,18 +16,20 @@ import { PaymentOptionsModal } from "@/components/dashboard/payment-options-moda
 export default function ShipmentsPage() {
   const token = useAuthStore((state) => state.token)
   const [shipments, setShipments] = useState<any[]>([])
+  const [pagination, setPagination] = useState<PaginationInfo>({ total: 0, page: 1, limit: 10, pages: 0 })
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [selectedPaymentShipment, setSelectedPaymentShipment] = useState<any>(null)
 
-  const loadShipments = async () => {
+  const loadShipments = async (page = 1) => {
     if (!token) return
     setError("")
     setLoading(true)
     try {
-      const response = await getCustomerShipments(token)
+      const response = await getCustomerShipments(token, page, pagination.limit)
       setShipments(Array.isArray(response.data) ? response.data : [])
+      setPagination(response.pagination || { total: 0, page, limit: pagination.limit, pages: 0 })
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load shipments.")
     } finally {
@@ -35,7 +38,7 @@ export default function ShipmentsPage() {
   }
 
   useEffect(() => {
-    loadShipments()
+    loadShipments(1)
   }, [token])
 
   const filteredShipments = useMemo(
@@ -75,7 +78,7 @@ export default function ShipmentsPage() {
               <CardDescription>View and manage your shipping history</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={loadShipments} disabled={loading}>
+              <Button variant="outline" size="sm" onClick={() => loadShipments(pagination.page)} disabled={loading}>
                 <RefreshCw className="w-4 h-4" /> Refresh
               </Button>
             </div>
@@ -176,6 +179,22 @@ export default function ShipmentsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {pagination.pages > 1 ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-4">
+          <p className="text-sm text-muted-foreground">
+            Page {pagination.page} of {pagination.pages} • {pagination.total} total shipments
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => loadShipments(Math.max(1, pagination.page - 1))} disabled={pagination.page <= 1 || loading}>
+              Previous
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => loadShipments(Math.min(pagination.pages, pagination.page + 1))} disabled={pagination.page >= pagination.pages || loading}>
+              Next
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       <PaymentOptionsModal
         open={Boolean(selectedPaymentShipment)}

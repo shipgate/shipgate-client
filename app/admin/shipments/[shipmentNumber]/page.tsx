@@ -26,7 +26,7 @@ export default function AdminShipmentDetailsPage() {
   const [message, setMessage] = useState("")
   const [actionMessage, setActionMessage] = useState("")
   const [assignedPrice, setAssignedPrice] = useState("")
-  const [currency, setCurrency] = useState("USD")
+  const [currency, setCurrency] = useState("NGN")
   const [charges, setCharges] = useState([{ description: "", amount: "" }])
   const [receiveLocation, setReceiveLocation] = useState("")
   const [receiveNotes, setReceiveNotes] = useState("")

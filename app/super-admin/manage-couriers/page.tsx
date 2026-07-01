@@ -12,6 +12,7 @@ import { getUsers, deleteUser, addCourier } from "@/lib/auth-api"
 import { ConfirmationDialog } from "@/components/confirm-dialog"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import type { AuthUser } from "@/store/auth"
+import type { PaginationInfo } from "@/lib/auth-api"
 
 interface ConfirmDialogState {
   open: boolean
@@ -24,6 +25,7 @@ interface ConfirmDialogState {
 export default function ManageCouriers() {
   const { token } = useAuthStore()
   const [couriers, setCouriers] = useState<AuthUser[]>([])
+  const [pagination, setPagination] = useState<PaginationInfo>({ total: 0, page: 1, limit: 10, pages: 0 })
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -49,14 +51,15 @@ export default function ManageCouriers() {
 
   useEffect(() => {
     if (token) {
-      fetchCouriers()
+      fetchCouriers(1)
     }
   }, [token])
 
-  const fetchCouriers = async () => {
+  const fetchCouriers = async (page = 1) => {
     try {
-      const data = await getUsers("courier", token!)
-      setCouriers(data.users)
+      const data = await getUsers("courier", token!, page, pagination.limit)
+      setCouriers(data.users || [])
+      setPagination(data.pagination || { total: 0, page, limit: pagination.limit, pages: 0 })
     } catch (err: any) {
       toast.error(err.message || "Failed to fetch couriers")
     } finally {
@@ -99,7 +102,7 @@ export default function ManageCouriers() {
         vehicleType: "motorcycle",
       })
       setShowForm(false)
-      fetchCouriers()
+      fetchCouriers(1)
     } catch (err: any) {
       toast.error(err.message || "Failed to add courier")
     } finally {
@@ -114,7 +117,7 @@ export default function ManageCouriers() {
     try {
       await deleteUser(confirmDialog.id, token!)
       toast.success("Courier deleted successfully")
-      fetchCouriers()
+      fetchCouriers(pagination.page)
     } catch (err: any) {
       toast.error(err.message || "Failed to delete courier")
     } finally {
@@ -247,7 +250,7 @@ export default function ManageCouriers() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Couriers ({couriers.length})</CardTitle>
+          <CardTitle>Couriers ({pagination.total || couriers.length})</CardTitle>
           <CardDescription>Active delivery couriers</CardDescription>
         </CardHeader>
         <CardContent>
@@ -313,6 +316,22 @@ export default function ManageCouriers() {
           </div>
         </CardContent>
       </Card>
+
+      {pagination.pages > 1 ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-4">
+          <p className="text-sm text-muted-foreground">
+            Page {pagination.page} of {pagination.pages} • {pagination.total} total couriers
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => fetchCouriers(Math.max(1, pagination.page - 1))} disabled={pagination.page <= 1 || loading}>
+              Previous
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => fetchCouriers(Math.min(pagination.pages, pagination.page + 1))} disabled={pagination.page >= pagination.pages || loading}>
+              Next
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       <ConfirmationDialog
         open={confirmDialog.open}

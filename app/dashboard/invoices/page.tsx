@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Download, Eye, RefreshCw } from "lucide-react"
+import { jsPDF } from "jspdf"
+import { format } from "date-fns"
 import { PaymentOptionsModal } from "@/components/dashboard/payment-options-modal"
 import { getCustomerInvoices, Invoice } from "@/lib/payments-api"
 import { useAuthStore } from "@/store/auth"
@@ -29,7 +31,79 @@ function formatMoney(amount: number, currency = "NGN") {
 function formatDate(value?: string) {
   if (!value) return "N/A"
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString()
+  return Number.isNaN(date.getTime()) ? value : format(date, "dd/MM/yyyy, HH:mm")
+}
+
+async function getImageDataUrl(src: string) {
+  const response = await fetch(src)
+  const blob = await response.blob()
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
+}
+
+async function buildInvoicePdf(invoice: Invoice) {
+  const doc = new jsPDF({ unit: "pt", format: "a4" })
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const margin = 40
+  const primary = "#1d4ed8"
+  const textColor = "#0f172a"
+  const background = "#f8fafc"
+  const logoUrl = "/logo.png"
+
+  const imageData = await getImageDataUrl(logoUrl)
+
+  doc.setFillColor(background)
+  doc.rect(0, 0, pageWidth, doc.internal.pageSize.getHeight(), "F")
+
+  doc.addImage(imageData, "PNG", margin, 32, 90, 90)
+  doc.setFontSize(18)
+  doc.setTextColor(primary)
+  doc.text("Shipgate Invoice", margin + 110, 60)
+
+  doc.setFontSize(10)
+  doc.setTextColor(textColor)
+  doc.text("Shipgate by Bowa Gate", margin + 110, 80)
+
+  doc.setDrawColor(primary)
+  doc.setLineWidth(1)
+  doc.line(margin, 135, pageWidth - margin, 135)
+
+  doc.setFontSize(12)
+  doc.setTextColor(textColor)
+  doc.text(`Invoice ID: ${invoice.invoiceId}`, margin, 165)
+  doc.text(`Shipment: ${invoice.shipmentNumber}`, margin, 185)
+  doc.text(`Status: ${displayStatus(invoice.status)}`, margin, 205)
+  doc.text(`Date: ${formatDate(invoice.createdAt)}`, margin, 225)
+  if (invoice.dueDate) {
+    doc.text(`Due Date: ${formatDate(invoice.dueDate)}`, margin, 245)
+  }
+
+  doc.setFontSize(14)
+  doc.setTextColor(primary)
+  doc.text("Invoice Summary", margin, 290)
+  doc.setFillColor("#eff6ff")
+  doc.roundedRect(margin, 300, pageWidth - margin * 2, 80, 8, 8, "F")
+
+  doc.setFontSize(12)
+  doc.setTextColor(textColor)
+  doc.text(`Description: ${invoice.description || "Shipment invoice"}`, margin + 12, 324)
+  doc.text(`Amount: ${formatMoney(Number(invoice.amount || 0), invoice.currency)}`, margin + 12, 344)
+  doc.text(`Currency: ${invoice.currency?.toUpperCase() || "NGN"}`, margin + 12, 364)
+
+  doc.setFontSize(10)
+  doc.setTextColor("#475569")
+  doc.text(
+    "Thank you for using Shipgate. This invoice is generated from the Shipgate dashboard and can be used for payment tracking.",
+    margin,
+    410,
+    { maxWidth: pageWidth - margin * 2 },
+  )
+
+  return doc
 }
 
 function displayStatus(status: string) {
@@ -99,6 +173,33 @@ export default function InvoicesPage() {
     .filter((invoice) => invoice.status.toUpperCase() === "PENDING")
     .reduce((sum, invoice) => sum + Number(invoice.amount || 0), 0)
   const defaultCurrency = invoices[0]?.currency || "NGN"
+
+  const [pdfLoading, setPdfLoading] = useState<string | null>(null)
+
+  const handleDownloadInvoice = async (invoice: Invoice) => {
+    setPdfLoading(invoice.invoiceId)
+    try {
+      const doc = await buildInvoicePdf(invoice)
+      doc.save(`invoice-${invoice.invoiceId}.pdf`)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setPdfLoading(null)
+    }
+  }
+
+  const handleViewInvoice = async (invoice: Invoice) => {
+    setPdfLoading(invoice.invoiceId)
+    try {
+      const doc = await buildInvoicePdf(invoice)
+      const blobUrl = String(doc.output("bloburl"))
+      window.open(blobUrl, "_blank")
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setPdfLoading(null)
+    }
+  }
 
   return (
     <div className="flex-1 overflow-auto">
@@ -205,10 +306,22 @@ export default function InvoicesPage() {
                         </td>
                         <td className="py-4 px-4">
                           <div className="flex items-center justify-center gap-2">
-                            <Button size="sm" variant="ghost" title="View">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              title="View"
+                              onClick={() => handleViewInvoice(invoice)}
+                              disabled={pdfLoading === invoice.invoiceId}
+                            >
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <Button size="sm" variant="ghost" title="Download">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              title="Download"
+                              onClick={() => handleDownloadInvoice(invoice)}
+                              disabled={pdfLoading === invoice.invoiceId}
+                            >
                               <Download className="w-4 h-4" />
                             </Button>
                             {invoice.status.toUpperCase() === "PENDING" ? (

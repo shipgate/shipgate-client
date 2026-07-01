@@ -9,6 +9,20 @@ interface ApiResponse<T = unknown> {
   [key: string]: unknown
 }
 
+export interface PaginationInfo {
+  total: number
+  page: number
+  limit: number
+  pages: number
+}
+
+interface UsersResponse {
+  success: boolean
+  users: AuthUser[]
+  pagination?: PaginationInfo
+  message?: string
+}
+
 async function request<T = ApiResponse>(path: string, options: RequestInit & { token?: string } = {}) {
   const { token, ...restOptions } = options
   const headers: Record<string, string> = {
@@ -109,8 +123,8 @@ export async function authenticateUser(payload: { email: string; password: strin
     return await loginUser(payload)
 }
 
-export async function getUsers(type: string, token: string) {
-  return request<{ users: AuthUser[] }>(`/api/v1/auth/users?type=${type}`, {
+export async function getUsers(type: string, token: string, page = 1, limit = 10) {
+  return request<UsersResponse>(`/api/v1/auth/users?type=${type}&page=${page}&limit=${limit}`, {
     method: "GET",
     token,
   })

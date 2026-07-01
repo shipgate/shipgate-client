@@ -11,12 +11,24 @@ interface ShippingResponse<T = unknown> {
   [key: string]: unknown
 }
 
+export interface PaginationInfo {
+  total: number
+  page: number
+  limit: number
+  pages: number
+}
+
+interface PaginatedShippingResponse<T = unknown> extends ShippingResponse<T> {
+  pagination?: PaginationInfo
+}
+
 export type TrackingStage =
   | "PACKAGE_RECEIVED"
   | "IN_CUSTOMS"
   | "IN_TRANSIT"
   | "ARRIVED_NIGERIAN_CUSTOMS"
   | "ARRIVED_WAREHOUSE"
+  | "OUT_FOR_DELIVERY"
   | "PENDING_DELIVERY"
 
 export type TrackingStageStatus = "PENDING" | "COMPLETED"
@@ -65,8 +77,8 @@ export async function createShipment(payload: unknown, token: string) {
   })
 }
 
-export async function getCustomerShipments(token: string, page = 1, limit = 20) {
-  return request<ShippingResponse<any[]>>(`/api/v1/shipping/shipments?page=${page}&limit=${limit}`, {
+export async function getCustomerShipments(token: string, page = 1, limit = 10) {
+  return request<PaginatedShippingResponse<any[]>>(`/api/v1/shipping/shipments?page=${page}&limit=${limit}`, {
     method: 'GET',
     token,
   })
@@ -75,7 +87,7 @@ export async function getCustomerShipments(token: string, page = 1, limit = 20) 
 export async function getAdminShipments(
   token: string,
   page = 1,
-  limit = 20,
+  limit = 10,
   status?: string,
   shipmentType?: string,
   shipmentMethod?: string,
@@ -91,7 +103,7 @@ export async function getAdminShipments(
   if (shipmentMethod) query.set('shipmentMethod', shipmentMethod)
   if (customerId) query.set('customerId', customerId)
 
-  return request<ShippingResponse<any[]>>(`/api/v1/shipping/admin/shipments?${query.toString()}`, {
+  return request<PaginatedShippingResponse<any[]>>(`/api/v1/shipping/admin/shipments?${query.toString()}`, {
     method: 'GET',
     token,
   })
