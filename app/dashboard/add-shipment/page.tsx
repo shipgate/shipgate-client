@@ -242,6 +242,7 @@ export default function AddShipmentPage() {
               className="w-full p-3 border border-border rounded-lg bg-background"
             >
               <option value="AIR">Air</option>
+              {shipmentType === "CONSOLIDATION" && <option value="AIR_EXPRESS">Air Express</option>}
               <option value="SEA_CBM">Sea CBM</option>
               <option value="SEA_20FT">Sea 20ft Container</option>
               <option value="SEA_40FT">Sea 40ft Container</option>

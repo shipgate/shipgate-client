@@ -59,7 +59,7 @@ export function TrackingMap({ origin, destination, status, shipmentMethod, shipp
           </div>
 
           {/* Route details */}
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <p className="text-sm font-semibold text-foreground">Route Details:</p>
             {isAir ? (
               <ul className="text-xs text-foreground/70 space-y-1 list-disc list-inside">
@@ -76,7 +76,7 @@ export function TrackingMap({ origin, destination, status, shipmentMethod, shipp
                 <li>Nigeria Port → Warehouse</li>
               </ul>
             )}
-          </div>
+          </div> */}
         </div>
       </CardContent>
     </Card>

@@ -30,15 +30,47 @@ const normalizeStage = (value: string | undefined) =>
     .toUpperCase()
     .replace(/[-\s]+/g, "_") || ""
 
-const getStageConfig = (stageKey: string) =>
-  TIMELINE_STAGES.find(
-    (stage) => normalizeStage(stage.stage) === stageKey || normalizeStage(stage.label) === stageKey
-  )
+const resolveTimelineStageKey = (value: string | undefined) => {
+  const normalizedValue = normalizeStage(value)
+  if (!normalizedValue) return ""
 
-const getStageIndex = (stageKey: string) =>
-  TIMELINE_STAGES.findIndex(
-    (stage) => normalizeStage(stage.stage) === stageKey || normalizeStage(stage.label) === stageKey
+  const knownStageKeys = new Set(TIMELINE_STAGES.map((stage) => normalizeStage(stage.stage)))
+  const knownLabels = new Set(TIMELINE_STAGES.map((stage) => normalizeStage(stage.label)))
+
+  if (knownStageKeys.has(normalizedValue) || knownLabels.has(normalizedValue)) {
+    return normalizedValue
+  }
+
+  if (normalizedValue.includes("CUSTOMS") || normalizedValue.includes("CLEARANCE")) {
+    return normalizedValue.includes("NIGERIA") || normalizedValue.includes("NIGERIAN")
+      ? "ARRIVED_NIGERIAN_CUSTOMS"
+      : "IN_CUSTOMS"
+  }
+
+  if (normalizedValue.includes("WAREHOUSE")) return "ARRIVED_WAREHOUSE"
+  if (normalizedValue.includes("DELIVER")) return "OUT_FOR_DELIVERY"
+  if (normalizedValue.includes("TRANSIT")) return "IN_TRANSIT"
+  if (normalizedValue.includes("RECEIVED")) return "PACKAGE_RECEIVED"
+  if (normalizedValue.includes("CREATED")) return "SHIPMENT_CREATED"
+  if (normalizedValue.includes("COMPLETED") || normalizedValue.includes("DELIVERED")) return "COMPLETED"
+  if (normalizedValue.includes("AIRPORT") || normalizedValue.includes("PORT")) return "IN_CUSTOMS"
+
+  return normalizedValue
+}
+
+const getStageConfig = (stageKey: string) => {
+  const resolvedStageKey = resolveTimelineStageKey(stageKey)
+  return TIMELINE_STAGES.find(
+    (stage) => normalizeStage(stage.stage) === resolvedStageKey || normalizeStage(stage.label) === resolvedStageKey,
   )
+}
+
+const getStageIndex = (stageKey: string) => {
+  const resolvedStageKey = resolveTimelineStageKey(stageKey)
+  return TIMELINE_STAGES.findIndex(
+    (stage) => normalizeStage(stage.stage) === resolvedStageKey || normalizeStage(stage.label) === resolvedStageKey,
+  )
+}
 
 const getShipmentMethod = (shipment: any) =>
   String(shipment?.shipmentMethod || shipment?.shippingMethod || shipment?.shippingType || shipment?.method || "").toUpperCase()
@@ -93,7 +125,8 @@ const getResolvedStageText = (stageConfig: any, shipment: any, stageKey: string,
 }
 
 function mapTrackingTimelineEvent(event: any, shipment: any): ShipmentTimelineEvent {
-  const stageKey = normalizeStage(event.stage || event.status || event.stageName || event.type)
+  const rawStageKey = normalizeStage(event.stage || event.status || event.stageName || event.type)
+  const stageKey = resolveTimelineStageKey(rawStageKey)
   const stageConfig = getStageConfig(stageKey)
   const resolvedLocation = getResolvedTimelineLocation(stageKey, shipment, event.location)
   const { label, description } = getResolvedStageText(stageConfig, shipment, stageKey, resolvedLocation)
@@ -174,7 +207,7 @@ export function buildTimelineFromShipment(shipment: any): ShipmentTimelineEvent[
     })
 
     const extraEvents = normalizedTimeline.filter((event: ShipmentTimelineEvent) => {
-      const normalizedStatus = normalizeStage(event.status)
+      const normalizedStatus = resolveTimelineStageKey(event.status)
       return !TIMELINE_STAGES.some(
         (stage) => normalizeStage(stage.stage) === normalizedStatus || normalizeStage(stage.label) === normalizedStatus,
       )

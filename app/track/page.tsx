@@ -122,12 +122,9 @@ export default function TrackPage() {
             <>
               <Card className="mb-8">
                 <CardHeader>
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-center">
                     <div>
-                      <CardTitle className="text-2xl">{shipment.shipmentNumber || shipment.trackingNumber}</CardTitle>
-                      <CardDescription>
-                        {shipment.origin} → {shipment.destination}
-                      </CardDescription>
+                      <CardTitle className="text-sm sm:text-2xl">{shipment.shipmentNumber || shipment.trackingNumber}</CardTitle>
                     </div>
                     <Badge className={getStatusBadgeClass(shipment.currentStatus || shipment.status)}>
                       {formatStatusLabel(shipment.currentStatus || shipment.status)}
@@ -139,13 +136,13 @@ export default function TrackPage() {
                     <div>
                       <p className="text-foreground/60 text-sm">Shipping Type</p>
                       <p className="text-lg font-semibold text-foreground capitalize">
-                        {shipment.shippingType === 'air' ? '✈️ Air Shipping' : '🚢 Sea Shipping'}
+                        {shipment.shipmentMethod === 'AIR' ? '✈️ Air Shipping' : '🚢 Sea Shipping'}
                       </p>
                     </div>
-                    <div>
+                    {/* <div>
                       <p className="text-foreground/60 text-sm">Estimated Delivery</p>
                       <p className="text-lg font-semibold text-foreground">{shipment.estimatedDelivery}</p>
-                    </div>
+                    </div> */}
                     {shipment.weight && (
                       <div>
                         <p className="text-foreground/60 text-sm">Weight</p>
@@ -158,13 +155,13 @@ export default function TrackPage() {
                         <p className="text-lg font-semibold text-foreground">{shipment.containerType} Container</p>
                       </div>
                     )}
-                    <div>
+                    {/* <div>
                       <p className="text-foreground/60 text-sm">Carrier</p>
                       <p className="text-lg font-semibold text-foreground">{shipment.carrier}</p>
-                    </div>
+                    </div> */}
                     <div>
                       <p className="text-foreground/60 text-sm">Total Cost</p>
-                      <p className="text-lg font-semibold text-primary">{shipment.cost}</p>
+                      <p className="text-lg font-semibold text-primary">₦{shipment.pricing.totalPrice.toLocaleString()}</p>
                     </div>
                   </div>
                 </CardContent>
