@@ -183,7 +183,7 @@ export default function SupportPage() {
                 <p className="text-white/90 mb-8">
                   Join thousands of satisfied customers. Our support team is ready to assist you 24/7 via WhatsApp.
                 </p>
-                <a href="https://wa.me/234XXXXXXXXX" target="_blank" rel="noopener noreferrer">
+                <a href="https://wa.me/2348136729646" target="_blank" rel="noopener noreferrer">
                   <Button className="bg-white text-primary hover:bg-white/90 px-8 py-6 text-lg font-semibold">
                     Chat on WhatsApp
                   </Button>
