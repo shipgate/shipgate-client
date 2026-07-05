@@ -46,7 +46,7 @@ export default function DashboardSupportPage() {
                   <h3 className="font-semibold text-foreground mb-2">WhatsApp</h3>
                   <p className="text-sm text-foreground/70 mb-3">Instant messaging support available 24/7</p>
                   <a
-                    href="https://wa.me/234XXXXXXXXX"
+                    href="https://wa.me/2348136729646"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary hover:text-primary/80 font-semibold text-sm inline-flex items-center gap-2"
@@ -65,8 +65,8 @@ export default function DashboardSupportPage() {
                 <div>
                   <h3 className="font-semibold text-foreground mb-2">Phone</h3>
                   <p className="text-sm text-foreground/70 mb-3">Call our support team during business hours</p>
-                  <a href="tel:+234XXXXXXXXX" className="text-primary hover:text-primary/80 font-semibold text-sm">
-                    +234 XXX XXX XXX
+                  <a href="tel:+2348136729646" className="text-primary hover:text-primary/80 font-semibold text-sm">
+                    +234 813 672 9646
                   </a>
                 </div>
               </div>
@@ -81,10 +81,10 @@ export default function DashboardSupportPage() {
                   <h3 className="font-semibold text-foreground mb-2">Email</h3>
                   <p className="text-sm text-foreground/70 mb-3">Response within 2 hours</p>
                   <a
-                    href="mailto:support@logiship.com"
+                    href="mailto:welcome@shipgate.ng"
                     className="text-primary hover:text-primary/80 font-semibold text-sm"
                   >
-                    support@logiship.com
+                    welcome@shipgate.ng
                   </a>
                 </div>
               </div>

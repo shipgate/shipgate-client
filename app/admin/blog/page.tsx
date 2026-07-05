@@ -87,8 +87,10 @@ export default function BlogAdminPage() {
   }
 
   const filteredPosts = posts.filter((post) =>
-    post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    post.slug.toLowerCase().includes(searchTerm.toLowerCase())
+    (post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    post.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    post.category.toLowerCase().includes(searchTerm.toLowerCase()) ) &&
+    post.status.includes(statusFilter === "all" ? "" : statusFilter)
   )
 
   const categories = Array.from(new Set(posts.map((p) => p.category)))

@@ -66,7 +66,7 @@ export default function SupportPage() {
                 <h3 className="font-semibold text-foreground mb-2">WhatsApp</h3>
                 <p className="text-sm text-foreground/70 mb-4">Instant messaging support</p>
                 <a
-                  href="https://wa.me/234XXXXXXXXX"
+                  href="https://wa.me/2348136729646"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:text-primary/80 font-semibold text-sm"
@@ -81,8 +81,8 @@ export default function SupportPage() {
                 <Phone className="w-12 h-12 text-primary mx-auto mb-4" />
                 <h3 className="font-semibold text-foreground mb-2">Phone</h3>
                 <p className="text-sm text-foreground/70 mb-4">Call our support team</p>
-                <a href="tel:+234XXXXXXXXX" className="text-primary hover:text-primary/80 font-semibold text-sm">
-                  +234 XXX XXX XXX →
+                <a href="tel:+2348136729646" className="text-primary hover:text-primary/80 font-semibold text-sm">
+                  +234 813 672 9646 →
                 </a>
               </CardContent>
             </Card>
@@ -93,10 +93,10 @@ export default function SupportPage() {
                 <h3 className="font-semibold text-foreground mb-2">Email</h3>
                 <p className="text-sm text-foreground/70 mb-4">Response within 2 hours</p>
                 <a
-                  href="mailto:support@.com"
+                  href="mailto:welcome@shipgate.ng"
                   className="text-primary hover:text-primary/80 font-semibold text-sm"
                 >
-                  support@.com →
+                  welcome@shipgate.ng →
                 </a>
               </CardContent>
             </Card>

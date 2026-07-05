@@ -409,7 +409,11 @@ export default function HomePage() {
             <div>
               <h4 className="font-semibold mb-4">Contact</h4>
               <p className="text-sm opacity-80 mb-2">WhatsApp: +234 813 672 9646</p>
-              <p className="text-sm opacity-80">Email: hello@shipgate.ng</p>
+              <p className="text-sm opacity-80">
+                <Link href="mailto:welcome@shipgate.ng" className="hover:opacity-100">
+                  Email: welcome@shipgate.ng
+                </Link>
+              </p>
             </div>
           </div>
           <div className="border-t border-background/20 pt-8 text-center text-sm opacity-60">
