@@ -41,7 +41,7 @@ export default function DashboardPage() {
     setError("")
     setLoading(true)
     try {
-      const response = await getCustomerShipments(token)
+      const response = await getCustomerShipments(token, 1, 5)
       setShipments(Array.isArray(response.data) ? response.data : [])
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load shipments.")

@@ -31,6 +31,7 @@ export default function SuperAdminShipmentDetailsPage() {
   const [receiveLocation, setReceiveLocation] = useState("")
   const [receiveNotes, setReceiveNotes] = useState("")
   const [selectedParcelIds, setSelectedParcelIds] = useState<string[]>([])
+  const paymentStatus = String(shipment?.pricing?.status || shipment?.paymentStatus || "").toUpperCase()
 
   const loadShipment = async () => {
     if (!shipmentNumber || !token) return
@@ -180,8 +181,8 @@ export default function SuperAdminShipmentDetailsPage() {
                   <p className="text-lg font-semibold text-foreground">{shipment.deliveryMethod || "N/A"}</p>
                 </div>
                 <div>
-                  <p className="text-foreground/60 text-sm">Current Status</p>
-                  <p className="text-lg font-semibold text-foreground">{shipment.currentStatus || shipment.status || "Pending"}</p>
+                  <p className="text-foreground/60 text-sm">Payment Status</p>
+                  <p className={`text-lg font-semibold text-foreground ${paymentStatus === "PAID" ? "text-green-700" : "text-red-500"}`}>{paymentStatus}</p>
                 </div>
                 <div>
                   <p className="text-foreground/60 text-sm">Price</p>
@@ -320,7 +321,7 @@ export default function SuperAdminShipmentDetailsPage() {
               </CardHeader>
               <CardContent className="space-y-4 h-40 overflow-y-scroll">
                 {shipment.trackingTimeline.some((event: any) => {
-                  return event.status === "RECEIVED" && event.status === "COMPLETED"
+                  return event.stage === "PACKAGE_RECEIVED" && event.status === "COMPLETED"
                 }) ? (
                   <p className="text-sm text-foreground/70">Package has been received.</p>
                 ) : 

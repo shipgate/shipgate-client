@@ -63,8 +63,8 @@ export function TrackingTimeline({ events }: TrackingTimelineProps) {
                   <p>{formatTimestamp(event.timestamp)}</p>
                 </div>
 
-                {Array.isArray(event.parcelUpdates) && event.parcelUpdates.length > 0 ? (
-                  <div className="ml-6 rounded-lg border border-border bg-surface p-3 text-sm">
+                {Array.isArray(event.parcelUpdates) && event.parcelUpdates.length > 0 && event.status ==='Received at Shipgate Warehouse in China' ? (
+                  <div className="ml-6 rounded-lg border border-border bg-surface p-3 text-sm h-40 overflow-y-scroll">
                     <p className="font-semibold text-foreground">Parcel updates</p>
                     <div className="mt-2 space-y-2">
                       {event.parcelUpdates.map((parcel, parcelIndex) => (

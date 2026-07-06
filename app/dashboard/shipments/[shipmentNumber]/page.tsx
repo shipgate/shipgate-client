@@ -44,6 +44,7 @@ export default function ShipmentDetailsPage() {
   const [cosignees, setCosignees] = useState<any[]>([defaultCosignee])
   const [singleShipment, setSingleShipment] = useState(defaultSingleShipment)
   const [cancelReason, setCancelReason] = useState("")
+  const paymentStatus = String(shipment?.pricing?.status || shipment?.paymentStatus || "").toUpperCase()
 
   const loadShipment = async () => {
     if (!shipmentNumber || !token) return
@@ -192,7 +193,7 @@ export default function ShipmentDetailsPage() {
                 </div>
                 <div>
                   <p className="text-foreground/60 text-sm">Payment Status</p>
-                  <p className="text-lg font-semibold text-foreground">{shipment.pricing.status === "ASSIGNED" ? "Awaiting Payment" : "Pending"}</p>
+                  <p className={`text-lg font-semibold text-foreground ${paymentStatus === "PAID" ? "text-green-700" : "text-red-500"}`}>{paymentStatus}</p>
                 </div>
                 <div> 
                   <p className="text-foreground/60 text-sm">Price</p>

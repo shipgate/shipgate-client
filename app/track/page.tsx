@@ -20,6 +20,7 @@ export default function TrackPage() {
   const [shipment, setShipment] = useState<any>(null);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState('');
+  const price = shipment?.pricing?.totalPrice ? shipment.pricing.totalPrice.toLocaleString() : 'pending';
 
   useEffect(() => {
     if (trackingNumber) {
@@ -161,7 +162,7 @@ export default function TrackPage() {
                     </div> */}
                     <div>
                       <p className="text-foreground/60 text-sm">Total Cost</p>
-                      <p className="text-lg font-semibold text-primary">₦{shipment.pricing.totalPrice.toLocaleString()}</p>
+                      <p className="text-lg font-semibold text-primary">{price}</p>
                     </div>
                   </div>
                 </CardContent>

@@ -21,6 +21,7 @@ export default function ShipmentsPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [selectedPaymentShipment, setSelectedPaymentShipment] = useState<any>(null)
+  
 
   const loadShipments = async (page = 1) => {
     if (!token) return
@@ -101,7 +102,7 @@ export default function ShipmentsPage() {
             </div>
           ) : null}
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto h-80 overflow-y-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
