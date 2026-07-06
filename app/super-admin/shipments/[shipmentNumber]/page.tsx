@@ -218,7 +218,7 @@ export default function SuperAdminShipmentDetailsPage() {
                     <div className="rounded-xl border border-border p-4 space-y-3">
                       <p className="text-sm font-medium text-foreground">Parcels</p>
                       {shipment.parcels.map((parcel: any, index: number) => (
-                        <div key={parcel.parcelId || index} className="rounded-lg border border-border p-3">
+                        <div key={parcel.parcelId || index} className="rounded-lg border border-border p-3 ">
                           <p className="font-semibold text-foreground">{parcel.parcelId || `Parcel ${index + 1}`}</p>
                           <p className="text-sm text-foreground/60">Supplier: {parcel.supplierName || parcel.companyName || "N/A"}</p>
                           <p className="text-sm text-foreground/60">Status: {parcel.status || "Unknown"}</p>
@@ -318,8 +318,10 @@ export default function SuperAdminShipmentDetailsPage() {
                 <CardTitle>Mark Package Received</CardTitle>
                 <CardDescription>Confirm receipt and update parcel status.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {shipment.trackingTimeline.some((event: any) => event.stage === "PACKAGE_RECEIVED") ? (
+              <CardContent className="space-y-4 h-40 overflow-y-scroll">
+                {shipment.trackingTimeline.some((event: any) => {
+                  return event.status === "RECEIVED" && event.status === "COMPLETED"
+                }) ? (
                   <p className="text-sm text-foreground/70">Package has been received.</p>
                 ) : 
                 <>
@@ -348,7 +350,7 @@ export default function SuperAdminShipmentDetailsPage() {
                               <div className="space-y-1">
                                 <div className="flex flex-wrap gap-2 items-center">
                                   <span className="font-semibold text-foreground">{parcel.parcelId || `Parcel ${index + 1}`}</span>
-                                  <Badge variant="secondary">{parcel.status || "Unknown"}</Badge>
+                                  <Badge variant="secondary" className={getStatusBadgeClass(parcel.status || "Unknown")}>{parcel.status || "Unknown"}</Badge>
                                 </div>
                                 <p className="text-sm text-foreground/70">Supplier: {parcel.supplierName || parcel.companyName || "Unknown"}</p>
                                 {parcel.updatedBy ? (
