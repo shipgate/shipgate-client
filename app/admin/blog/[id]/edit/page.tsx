@@ -128,7 +128,7 @@ export default function EditBlogArticlePage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/super-admin/blog">
+        <Link href="/admin/blog">
           <Button variant="outline" size="sm" className="gap-2 bg-transparent">
             <ArrowLeft className="w-4 h-4" />
             Back

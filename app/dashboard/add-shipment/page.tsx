@@ -34,6 +34,8 @@ const defaultCosignee = {
 
 const defaultParcel = {
   parcelId: "",
+  itemCategory: "",
+  amount: "",
   supplierName: "",
   companyName: "",
   phoneNumber: "",
@@ -116,10 +118,12 @@ export default function AddShipmentPage() {
       const validParcels = parcels.filter(
         (parcel) =>
           parcel.parcelId.trim() &&
-          parcel.supplierName.trim() &&
-          parcel.companyName.trim() &&
-          parcel.phoneNumber.trim() &&
-          parcel.email.trim(),
+          parcel.itemCategory.trim() &&
+          parcel.amount.trim()
+          // parcel.supplierName.trim() &&
+          // parcel.companyName.trim() &&
+          // parcel.phoneNumber.trim() &&
+          // parcel.email.trim(),
       )
       if (validParcels.length === 0) {
         setError("Please add at least one parcel with supplier details for consolidation shipments.")
@@ -165,13 +169,17 @@ export default function AddShipmentPage() {
         .filter(
           (parcel) =>
             parcel.parcelId.trim() &&
-            parcel.supplierName.trim() &&
-            parcel.companyName.trim() &&
-            parcel.phoneNumber.trim() &&
-            parcel.email.trim(),
+            parcel.itemCategory.trim() &&
+            parcel.amount.trim()
+            // parcel.supplierName.trim() &&
+            // parcel.companyName.trim() &&
+            // parcel.phoneNumber.trim() &&
+            // parcel.email.trim(),
         )
         .map((parcel) => ({
           parcelId: parcel.parcelId,
+          itemCategory: parcel.itemCategory,
+          amount: Number(parcel.amount) || 1,
           supplierName: parcel.supplierName,
           companyName: parcel.companyName,
           phoneNumber: parcel.phoneNumber,
@@ -368,15 +376,17 @@ export default function AddShipmentPage() {
                       onChange={(e) => handleParcelChange(index, "parcelId", e.target.value)}
                     />
                     <Input
-                      placeholder="Supplier Name"
-                      value={parcel.supplierName}
-                      onChange={(e) => handleParcelChange(index, "supplierName", e.target.value)}
+                      placeholder="Item Category"
+                      value={parcel.itemCategory}
+                      onChange={(e) => handleParcelChange(index, "itemCategory", e.target.value)}
                     />
                     <Input
-                      placeholder="Company Name"
-                      value={parcel.companyName}
-                      onChange={(e) => handleParcelChange(index, "companyName", e.target.value)}
+                      type="number"
+                      placeholder="Item Quantity"
+                      value={parcel.amount}
+                      onChange={(e) => handleParcelChange(index, "amount", e.target.value)}
                     />
+                    {/* 
                     <Input
                       placeholder="Phone Number"
                       value={parcel.phoneNumber}
@@ -410,7 +420,7 @@ export default function AddShipmentPage() {
                       placeholder="Height (cm)"
                       value={parcel.height}
                       onChange={(e) => handleParcelChange(index, "height", e.target.value)}
-                    />
+                    /> */}
                   </div>
                 </div>
               ))}
@@ -420,59 +430,63 @@ export default function AddShipmentPage() {
             </CardContent>
           </Card>
         )}
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Item Details</CardTitle>
-            <CardDescription>Optional item data. You can submit a shipment without items if parcel/supplier details are complete.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {items.map((item, index) => (
-              <div key={index} className="space-y-3 rounded-2xl border border-border p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-semibold text-foreground">Item #{index + 1}</p>
-                  {items.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeItem(index)}
-                      className="text-destructive hover:text-destructive/90"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <Input
-                    placeholder="Description"
-                    value={item.description}
-                    onChange={(e) => handleItemChange(index, "description", e.target.value)}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Quantity"
-                    value={item.quantity}
-                    onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Weight (kg)"
-                    value={item.weight}
-                    onChange={(e) => handleItemChange(index, "weight", e.target.value)}
-                  />
-                  <Input
-                    type="number"
-                    placeholder="Value"
-                    value={item.value}
-                    onChange={(e) => handleItemChange(index, "value", e.target.value)}
-                  />
-                </div>
-              </div>
-            ))}
-            <Button type="button" variant="outline" onClick={addItem} className="w-full">
-              <Plus className="w-4 h-4 mr-2" /> Add Item
-            </Button>
-          </CardContent>
-        </Card>
+        
+        {
+          shipmentType === "SINGLE" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Item Details</CardTitle>
+                <CardDescription>Optional item data. You can submit a shipment without items if parcel/supplier details are complete.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {items.map((item, index) => (
+                  <div key={index} className="space-y-3 rounded-2xl border border-border p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="font-semibold text-foreground">Item #{index + 1}</p>
+                      {items.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeItem(index)}
+                          className="text-destructive hover:text-destructive/90"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      <Input
+                        placeholder="Description"
+                        value={item.description}
+                        onChange={(e) => handleItemChange(index, "description", e.target.value)}
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Quantity"
+                        value={item.quantity}
+                        onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Weight (kg)"
+                        value={item.weight}
+                        onChange={(e) => handleItemChange(index, "weight", e.target.value)}
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Value"
+                        value={item.value}
+                        onChange={(e) => handleItemChange(index, "value", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" onClick={addItem} className="w-full">
+                  <Plus className="w-4 h-4 mr-2" /> Add Item
+                </Button>
+              </CardContent>
+            </Card>
+          )
+        }
 
         <Card>
           <CardHeader>

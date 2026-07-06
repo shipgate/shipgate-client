@@ -223,7 +223,8 @@ export default function ShipmentDetailsPage() {
                       {shipment.parcels.map((parcel: any, index: number) => (
                         <div key={index} className="rounded-lg border border-border p-3">
                           <p className="font-semibold text-foreground">{parcel.parcelId || `Parcel ${index + 1}`}</p>
-                          <p className="text-foreground/60 text-sm">Weight: {parcel.weight || "N/A"} kg</p>
+                          <p className="text-foreground/60 text-sm">Item Category: {parcel.itemCategory || "N/A"}</p>
+                          <p className="text-foreground/60 text-sm">Item Qty: {parcel.amount || "N/A"}</p>
                         </div>
                       ))}
                     </div>

@@ -12,6 +12,11 @@ interface BlogPost {
   publishedAt?: string
   createdAt: string
   updatedAt: string
+  author: {
+    _id: string
+    fullName: string
+    email: string
+  }
 }
 
 /**

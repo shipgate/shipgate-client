@@ -1,6 +1,6 @@
 /**
  * Cookie utility functions
- * These functions help manage authentication tokens and other cookies
+ * To help manage authentication tokens and other cookies
  */
 
 export function setAuthCookie(token: string, expiryDays: number = 7) {

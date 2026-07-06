@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Edit2, Trash2, Search } from "lucide-react"
+import { Plus, Edit2, Trash2, Search, Eye } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { useAuthStore } from "@/store/auth"
@@ -211,6 +211,11 @@ export default function BlogAdminPage() {
                           <Link href={`/admin/blog/${post._id}/edit`}>
                             <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
                               <Edit2 className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                          <Link href={`/admin/blog/${post._id}/preview`}>
+                            <Button variant="ghost" size="sm" className="text-yellow-600 hover:text-yellow-700">
+                              <Eye className="w-4 h-4" />
                             </Button>
                           </Link>
                           <Button

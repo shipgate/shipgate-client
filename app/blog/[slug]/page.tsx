@@ -10,6 +10,8 @@ import { NewsletterSubscription } from "@/components/newsletter-subscription"
 import { getBlogBySlug, getAllBlogSlugs, getBlogPosts } from "@/lib/blog-api"
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { toast } from "sonner"
+import { ShareButton } from "@/components/share-button"
 
 interface BlogPost {
   _id: string
@@ -146,6 +148,8 @@ export default async function BlogPostPage({ params }: Props) {
     },
   }
 
+  
+
   return (
     <>
       <script
@@ -191,10 +195,7 @@ export default async function BlogPostPage({ params }: Props) {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-                      <Share2 className="w-4 h-4" />
-                      Share
-                    </Button>
+                    <ShareButton />
                     <Button variant="outline" size="sm" className="gap-2 bg-transparent">
                       <Bookmark className="w-4 h-4" />
                       Save

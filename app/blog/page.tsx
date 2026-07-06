@@ -80,12 +80,14 @@ interface SearchParams {
   page?: string
   category?: string
   search?: string
+  saved?: string
 }
 
 export default async function BlogPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams
   const page = parseInt(params.page || "1")
   const selectedCategory = params.category
+  const savedFilter = params.saved === "true" ? true : false
   const searchTerm = params.search || ""
 
   const { posts, pagination } = await getBlogPosts(page, 10)
@@ -183,6 +185,17 @@ export default async function BlogPage({ searchParams }: { searchParams: Promise
                       </button>
                     </Link>
                   ))}
+                  {/* <Link key={"saved"} href={`/blog?saved=true`}>
+                      <button
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                          params.saved === "true"
+                            ? "bg-primary text-white"
+                            : "bg-white border border-border text-foreground hover:border-primary"
+                        }`}
+                      >
+                        Saved
+                      </button>
+                    </Link> */}
                 </div>
               </div>
             </CardContent>
