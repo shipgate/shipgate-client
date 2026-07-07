@@ -4,7 +4,7 @@ import { useState } from "react"
 import { CreditCard, Loader2, Wallet, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { initializeShipmentPayment } from "@/lib/payments-api"
+import { initializeShipmentPayment, payShipmentWithWallet } from "@/lib/payments-api"
 import { useAuthStore } from "@/store/auth"
 
 interface PaymentOptionsModalProps {
@@ -15,6 +15,7 @@ interface PaymentOptionsModalProps {
   amount?: number
   currency?: string
   onClose: () => void
+  onPaymentSuccess?: (walletBalance?: number) => void
 }
 
 function formatMoney(amount?: number, currency = "NGN") {
@@ -31,10 +32,12 @@ export function PaymentOptionsModal({
   amount,
   currency = "NGN",
   onClose,
+  onPaymentSuccess,
 }: PaymentOptionsModalProps) {
   const token = useAuthStore((state) => state.token)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [successMessage, setSuccessMessage] = useState("")
 
   if (!open) return null
 
@@ -72,6 +75,40 @@ export function PaymentOptionsModal({
     }
   }
 
+  const handleWalletPayment = async () => {
+    if (!token) {
+      setError("Please sign in again before making this payment.")
+      return
+    }
+
+    if (!shipmentNumber) {
+      setError("This payment is missing a shipment number.")
+      return
+    }
+
+    setLoading(true)
+    setError("")
+    setSuccessMessage("")
+
+    try {
+      const response = await payShipmentWithWallet(shipmentNumber, token, description || "Payment for shipment")
+      const payload = (response as any).data || response
+      const updatedBalance = Number(
+        payload.walletBalance ?? payload.customer?.walletBalance ?? payload.balance ?? NaN,
+      )
+
+      setSuccessMessage("Shipment paid with wallet successfully.")
+      onPaymentSuccess?.(Number.isNaN(updatedBalance) ? undefined : updatedBalance)
+      setTimeout(() => {
+        onClose()
+      }, 1200)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to process wallet payment.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <Card className="w-full max-w-lg rounded-lg">
@@ -95,14 +132,15 @@ export function PaymentOptionsModal({
 
           <button
             type="button"
-            disabled
-            className="w-full rounded-lg border border-border p-4 text-left opacity-60"
+            onClick={handleWalletPayment}
+            disabled={loading}
+            className="w-full rounded-lg border border-primary bg-primary/5 p-4 text-left transition hover:bg-primary/10 disabled:opacity-60"
           >
             <div className="flex items-center gap-3">
-              <Wallet className="w-5 h-5 text-foreground/60" />
+              <Wallet className="w-5 h-5 text-primary" />
               <div>
                 <p className="font-semibold text-foreground">Pay from wallet balance</p>
-                <p className="text-sm text-foreground/60">Wallet payments are coming soon.</p>
+                <p className="text-sm text-foreground/60">Use your stored wallet funds for this payment.</p>
               </div>
             </div>
           </button>
@@ -129,6 +167,11 @@ export function PaymentOptionsModal({
           {error ? (
             <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
               {error}
+            </div>
+          ) : null}
+          {successMessage ? (
+            <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-emerald-700">
+              {successMessage}
             </div>
           ) : null}
         </CardContent>

@@ -324,9 +324,13 @@ export default function AddShipmentPage() {
                   <label className="text-sm font-medium text-foreground">Supplier Phone</label>
                   <Input
                     name="phoneNumber"
+                    type='tel'
                     placeholder="+86 138 0000 0000"
                     value={singleShipment.phoneNumber}
                     onChange={handleSingleShipmentChange}
+                    maxLength={20}
+                    pattern="^\+?[1-9]\d{7,14}$"
+                    title="Enter a valid phone number (8–15 digits, optional + prefix)"
                   />
                 </div>
                 <div className="space-y-2">
@@ -336,6 +340,9 @@ export default function AddShipmentPage() {
                     placeholder="supplier@example.com"
                     value={singleShipment.email}
                     onChange={handleSingleShipmentChange}
+                    maxLength={100}
+                    pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+                    title="Enter a valid email address"
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
@@ -518,11 +525,17 @@ export default function AddShipmentPage() {
                     placeholder="Phone"
                     value={cosignee.phone}
                     onChange={(e) => handleCosigneeChange(index, "phone", e.target.value)}
+                    maxLength={20}
+                    pattern="^\+?[1-9]\d{7,14}$"
+                    title="Enter a valid phone number (8–15 digits, optional + prefix)"
                   />
                   <Input
                     placeholder="Email"
                     value={cosignee.email}
                     onChange={(e) => handleCosigneeChange(index, "email", e.target.value)}
+                    maxLength={100}
+                    pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+                    title="Enter a valid email address"
                   />
                 </div>
               </div>

@@ -353,6 +353,7 @@ export default function InvoicesPage() {
         amount={Number(selectedInvoice?.amount || 0)}
         currency={selectedInvoice?.currency || "NGN"}
         onClose={() => setSelectedInvoice(null)}
+        onPaymentSuccess={() => loadInvoices()}
       />
     </div>
   )

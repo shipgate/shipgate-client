@@ -31,11 +31,7 @@ export function WalletCard({ balance }: WalletCardProps) {
             </Button>
           </a>
 
-          <a href="/dashboard/withdraw">
-            <Button variant="outline" className="w-full border-white text-white hover:bg-white/10 bg-transparent">
-              Withdraw
-            </Button>
-          </a>
+          
         </div>
       </CardContent>
     </Card>

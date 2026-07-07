@@ -47,6 +47,38 @@ export interface VerifyPaymentResponse {
   [key: string]: unknown
 }
 
+export interface WalletTransaction {
+  reference?: string
+  type?: string
+  amount?: number
+  source?: string
+  status?: string
+  [key: string]: unknown
+}
+
+export interface WalletResponse {
+  balance?: number
+  customer?: {
+    fullName?: string
+    email?: string
+    walletBalance?: number
+    [key: string]: unknown
+  }
+  transactions?: WalletTransaction[]
+  [key: string]: unknown
+}
+
+export interface FundWalletResponse {
+  reference?: string
+  authorizationUrl?: string
+  authorization_url?: string
+  accessCode?: string
+  access_code?: string
+  amount?: number
+  currency?: string
+  [key: string]: unknown
+}
+
 async function request<T = PaymentsResponse>(path: string, options: PaymentsApiOptions = {}) {
   const { token, ...restOptions } = options
   const headers: Record<string, string> = {
@@ -89,9 +121,45 @@ export async function initializeShipmentPayment(shipmentNumber: string, token: s
   )
 }
 
+export async function payShipmentWithWallet(shipmentNumber: string, token: string, description = "Payment for shipment") {
+  return request<PaymentsResponse<{ walletBalance?: number }>>(
+    `/api/v1/payments/shipments/${encodeURIComponent(shipmentNumber)}/wallet`,
+    {
+      method: "POST",
+      token,
+      body: JSON.stringify({ description }),
+    },
+  )
+}
+
 export async function verifyPayment(reference: string, token: string) {
   return request<PaymentsResponse<VerifyPaymentResponse>>(
     `/api/v1/payments/verify/${encodeURIComponent(reference)}`,
+    {
+      method: "GET",
+      token,
+    },
+  )
+}
+
+export async function getCustomerWallet(token: string) {
+  return request<PaymentsResponse<WalletResponse>>("/api/v1/payments/wallet", {
+    method: "GET",
+    token,
+  })
+}
+
+export async function fundWallet(amount: number, email: string, description: string, token: string) {
+  return request<PaymentsResponse<FundWalletResponse>>("/api/v1/payments/wallet/fund", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ amount, email, description }),
+  })
+}
+
+export async function verifyWalletFunding(reference: string, token: string) {
+  return request<PaymentsResponse<VerifyPaymentResponse>>(
+    `/api/v1/payments/wallet/verify/${encodeURIComponent(reference)}`,
     {
       method: "GET",
       token,

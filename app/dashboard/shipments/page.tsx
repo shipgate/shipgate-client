@@ -209,6 +209,7 @@ export default function ShipmentsPage() {
         )}
         currency={selectedPaymentShipment?.pricing?.currency || selectedPaymentShipment?.currency || "NGN"}
         onClose={() => setSelectedPaymentShipment(null)}
+        onPaymentSuccess={() => loadShipments(pagination.page)}
       />
     </div>
   )

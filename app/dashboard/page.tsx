@@ -11,10 +11,11 @@ import { motion } from "motion/react"
 import { useTypewriter } from "react-simple-typewriter"
 import { useAuthStore } from "@/store/auth"
 import { getCustomerShipments } from "@/lib/shipping-api"
+import { getCustomerWallet } from "@/lib/payments-api"
 
 
 export default function DashboardPage() {
-  const [walletBalance] = useState(0.0)
+  const [walletBalance, setWalletBalance] = useState(0.0)
   const [shipmentCount] = useState(12)
   const [totalSpent] = useState(0.0)
   const token = useAuthStore((state) => state.token)
@@ -49,9 +50,22 @@ export default function DashboardPage() {
       setLoading(false)
     }
   }
+
+  const loadWalletBalance = async () => {
+    if (!token) return
+
+    try {
+      const response = await getCustomerWallet(token)
+      const payload = (response as any).data || response
+      setWalletBalance(Number(payload.balance ?? payload.customer?.walletBalance ?? 0) || 0)
+    } catch (err) {
+      console.error("Unable to load wallet balance:", err)
+    }
+  }
   
   useEffect(() => {
     loadShipments()
+    loadWalletBalance()
   }, [token])
 
   return (

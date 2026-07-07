@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Package, Calculator, FileText, Settings, MessageSquare, LogOut, Users, Truck, MapPin, ShoppingCart, BarChart3, Bell, ArrowRightCircle, ArrowRight } from "lucide-react"
+import { LayoutDashboard, Package, Calculator, FileText, Settings, MessageSquare, LogOut, Users, Truck, MapPin, ShoppingCart, BarChart3, Bell, ArrowRightCircle, ArrowRight, Wallet } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { useAuthStore } from "@/store/auth"
@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/
 const customerMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: Package, label: "My Shipments", href: "/dashboard/shipments" },
+  { icon: Wallet, label: "My Wallet", href: "/dashboard/wallet" },
   { icon: Calculator, label: "Calculator", href: "/dashboard/calculator" },
   { icon: FileText, label: "Invoices", href: "/dashboard/invoices" },
   { icon: MessageSquare, label: "Support", href: "/dashboard/support" },

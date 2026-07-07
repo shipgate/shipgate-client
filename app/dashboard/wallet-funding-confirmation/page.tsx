@@ -5,13 +5,13 @@ import Link from "next/link"
 import { CheckCircle2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { verifyPayment } from "@/lib/payments-api"
+import { verifyWalletFunding } from "@/lib/payments-api"
 import { useAuthStore } from "@/store/auth"
 
-export default function PaymentConfirmationPage() {
+export default function WalletFundingConfirmationPage() {
   const token = useAuthStore((state) => state.token)
   const [status, setStatus] = useState<"checking" | "success" | "error">("checking")
-  const [message, setMessage] = useState("Confirming your payment...")
+  const [message, setMessage] = useState("Confirming your wallet funding...")
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -19,31 +19,32 @@ export default function PaymentConfirmationPage() {
 
     if (!reference) {
       setStatus("error")
-      setMessage("We could not find a payment reference to verify.")
+      setMessage("We could not find a wallet funding reference to verify.")
       return
     }
 
     if (!token) {
       setStatus("error")
-      setMessage("Please sign in again so we can verify your payment.")
+      setMessage("Please sign in again so we can verify your wallet funding.")
       return
     }
 
     let active = true
 
-    verifyPayment(reference, token)
+    verifyWalletFunding(reference, token)
       .then((response) => {
         if (!active) return
         const payload = (response as any).data || response
-        const paymentStatus = String(payload.status || response.message || "").toUpperCase()
-        if (paymentStatus && paymentStatus.includes("FAILED")) {
+        const verificationStatus = String(payload.success ?? payload.status ?? "").toUpperCase()
+
+        if (verificationStatus && verificationStatus.includes("FALSE")) {
           setStatus("error")
-          setMessage("Payment verification failed. Please try again or contact support.")
+          setMessage("Wallet funding verification failed. Please try again or contact support.")
           return
         }
 
         setStatus("success")
-        setMessage("Payment has been received. Thank you for shipping with ShipGate.")
+        setMessage("Your wallet funding has been verified successfully.")
         window.setTimeout(() => {
           window.location.href = "/dashboard"
         }, 4500)
@@ -51,7 +52,7 @@ export default function PaymentConfirmationPage() {
       .catch((err: unknown) => {
         if (!active) return
         setStatus("error")
-        setMessage(err instanceof Error ? err.message : "Unable to verify payment.")
+        setMessage(err instanceof Error ? err.message : "Unable to verify wallet funding.")
       })
 
     return () => {
@@ -72,7 +73,7 @@ export default function PaymentConfirmationPage() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-foreground">
-              {status === "checking" ? "Verifying Payment" : status === "success" ? "Thank You" : "Payment Update"}
+              {status === "checking" ? "Verifying Wallet Funding" : status === "success" ? "Funding Confirmed" : "Funding Update"}
             </h1>
             <p className="mt-3 text-foreground/70">{message}</p>
             {status === "success" ? (
@@ -83,8 +84,8 @@ export default function PaymentConfirmationPage() {
             <Link href="/dashboard">
               <Button>Back to Dashboard</Button>
             </Link>
-            <Link href="/dashboard/invoices">
-              <Button variant="outline">View Invoices</Button>
+            <Link href="/dashboard/add-funds">
+              <Button variant="outline">Try Again</Button>
             </Link>
           </div>
         </CardContent>

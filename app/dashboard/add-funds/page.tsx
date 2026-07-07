@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CreditCard, Banknote, Smartphone } from "lucide-react"
+import { useAuthStore } from "@/store/auth"
+import { fundWallet } from "@/lib/payments-api"
 
 const paymentMethods = [
   { id: "card", name: "Credit/Debit Card", icon: CreditCard, description: "Visa, Mastercard" },
@@ -13,21 +15,46 @@ const paymentMethods = [
 ]
 
 export default function AddFundsPage() {
+  const token = useAuthStore((state) => state.token)
+  const email = useAuthStore((state) => state.user?.email)
   const [amount, setAmount] = useState("")
   const [selectedMethod, setSelectedMethod] = useState("card")
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
   const handleAddFunds = async () => {
     if (!amount || Number.parseFloat(amount) <= 0) {
-      alert("Please enter a valid amount")
+      setError("Please enter a valid amount.")
       return
     }
 
+    if (!token || !email) {
+      setError("Please sign in again to continue funding your wallet.")
+      return
+    }
+
+    setError("")
     setLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    alert(`Successfully added ₦${amount} to your wallet via ${selectedMethod}`)
-    setAmount("")
-    setLoading(false)
+
+    try {
+      const response = await fundWallet(Number(amount), email, "Wallet funding", token)
+      const payload = (response as any).data || response
+      const authorizationUrl =
+        payload.authorizationUrl ||
+        payload.authorization_url ||
+        payload.authorization?.authorizationUrl ||
+        payload.authorization?.authorization_url
+
+      if (!authorizationUrl || typeof authorizationUrl !== "string") {
+        throw new Error("Could not initialize wallet funding checkout.")
+      }
+
+      window.location.href = authorizationUrl
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to fund wallet.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
