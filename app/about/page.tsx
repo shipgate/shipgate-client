@@ -16,7 +16,7 @@ export default function AboutPage() {
               <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">About ShipGate</h1>
               <p className="text-lg text-foreground/70">
                 Bridging commerce between China and Nigeria with fast, reliable, and transparent logistics solutions
-                since 2020.
+                since 2025.
               </p>
             </div>
           </div>
@@ -202,18 +202,18 @@ export default function AboutPage() {
               <Card>
                 <CardContent className="pt-6">
                   <h3 className="font-semibold text-foreground mb-4">Nigeria Office</h3>
-                  <p className="text-foreground/70 text-sm mb-2">Murtala Muhammed International Airport</p>
+                  <p className="text-foreground/70 text-sm mb-2">13 Ade - Idowu St, Mafoluku Oshodi</p>
                   <p className="text-foreground/70 text-sm mb-4">Lagos, Nigeria</p>
-                  <p className="text-sm font-semibold text-primary">+234 XXX XXX XXXX</p>
+                  <p className="text-sm font-semibold text-primary">+234 813 672 9646</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardContent className="pt-6">
                   <h3 className="font-semibold text-foreground mb-4">Email & Support</h3>
-                  <p className="text-foreground/70 text-sm mb-2">support@.com</p>
-                  <p className="text-foreground/70 text-sm mb-4">info@.com</p>
-                  <p className="text-sm font-semibold text-primary">WhatsApp: 24/7</p>
+                  <p className="text-foreground/70 text-sm mb-2">welcome@shipgate.com</p>
+                  <p className="text-foreground/70 text-sm mb-4">0813 672 9646</p>
+                  <p className="text-sm font-semibold text-primary">WhatsApp: +234813 672 9646</p>
                 </CardContent>
               </Card>
             </div>
