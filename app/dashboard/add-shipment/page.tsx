@@ -526,7 +526,7 @@ export default function AddShipmentPage() {
                     value={cosignee.phone}
                     onChange={(e) => handleCosigneeChange(index, "phone", e.target.value)}
                     maxLength={20}
-                    pattern="^\+?[1-9]\d{7,14}$"
+                    pattern="^\+?\d{8,15}$"
                     title="Enter a valid phone number (8–15 digits, optional + prefix)"
                   />
                   <Input

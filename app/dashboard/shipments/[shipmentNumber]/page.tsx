@@ -303,6 +303,8 @@ export default function ShipmentDetailsPage() {
                       value={singleShipment.supplierPhone}
                       onChange={handleSingleShipmentChange}
                       placeholder="Supplier phone"
+                      pattern="^\+?\d{8,15}$"
+
                     />
                     <Input
                       name="supplierEmail"

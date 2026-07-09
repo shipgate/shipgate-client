@@ -316,7 +316,7 @@ export default function ServicesPage() {
             </div>
           </div>
           <div className="border-t border-background/20 pt-8 text-center text-sm opacity-60">
-            <p>&copy; 2025 SHIPGATE by BowaGate. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} SHIPGATE by BowaGate. All rights reserved.</p>
           </div>
         </footer>
       </main>

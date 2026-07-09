@@ -22,6 +22,7 @@ interface ShipmentSummary {
   shippingCost?: number | string
   totalAmount?: number | string
   amount?: number | string
+  pricing?: { totalPrice?: number | string } | null
 }
 
 export default function AdminDashboard() {
@@ -159,7 +160,7 @@ export default function AdminDashboard() {
                           {formatStatusLabel(shipment.currentStatus || shipment.status)}
                         </Badge>
                       </td>
-                      <td className="py-3 px-4 font-semibold text-primary">{formatAmount(shipment.shippingCost ?? shipment.totalAmount ?? shipment.amount)}</td>
+                      <td className="py-3 px-4 font-semibold text-primary">{formatAmount(shipment.pricing?.totalPrice ?? shipment.totalAmount ?? shipment.amount)}</td>
                       <td className="py-3 px-4">
                         <Button asChild variant="outline" size="sm">
                           <Link href={`/admin/shipments/${encodeURIComponent(shipment.shipmentNumber || shipment.id || "")}`}>

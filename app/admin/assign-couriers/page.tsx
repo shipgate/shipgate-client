@@ -86,7 +86,11 @@ export default function AssignCouriers() {
 
   const homeDeliveryShipments = useMemo(
     () =>
-      shipments.filter((shipment) => shipment.deliveryMethod === "HOME_DELIVERY" && !shipment.assignedCourier?._id),
+      shipments.filter((shipment) =>{
+        return (shipment.deliveryMethod === "HOME_DELIVERY" &&
+              !shipment.assignedCourier?._id && shipment.currentStatus === "ARRIVED_WAREHOUSE") 
+
+      }),
     [shipments],
   )
 
@@ -150,10 +154,10 @@ export default function AssignCouriers() {
                     : "border-border hover:border-primary/50"
                 }`}
               >
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between overflow-auto">
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-semibold text-foreground">{shipment.shipmentNumber}</p>
+                    <div className="flex sm:items-center gap-2 mb-1 max-sm:flex-col">
+                      <p className="font-semibold text-foreground ">{shipment.shipmentNumber}</p>
                       <Badge variant="outline">{shipment.currentStatus || "ARRIVED_WAREHOUSE"}</Badge>
                     </div>
                     <p className="text-sm text-foreground/60">{shipment.customerId?.fullName || "Customer"}</p>

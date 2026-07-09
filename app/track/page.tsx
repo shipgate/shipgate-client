@@ -42,6 +42,8 @@ export default function TrackPage() {
       } else {
         setShipment(data)
       }
+
+      
     } catch (err) {
       setNotFound(true)
       setShipment(null)
