@@ -139,7 +139,7 @@ export default function TrackPage() {
                     <div>
                       <p className="text-foreground/60 text-sm">Shipping Type</p>
                       <p className="text-lg font-semibold text-foreground capitalize">
-                        {shipment.shipmentMethod === 'AIR' ? '✈️ Air Shipping' : '🚢 Sea Shipping'}
+                        {shipment.shipmentMethod === 'AIR' || shipment.shipmentMethod === 'AIR_EXPRESS' ? '✈️ Air Shipping' : '🚢 Sea Shipping'}
                       </p>
                     </div>
                     {/* <div>
