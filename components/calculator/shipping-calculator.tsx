@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { DEFAULT_SHIPPING_RATES, getShippingRatesConfig, type ShippingRatesConfig } from "@/lib/shipping-api"
 
 export function ShippingCalculator() {
   const [shippingType, setShippingType] = useState<"air" | "sea">("air")
@@ -15,6 +16,18 @@ export function ShippingCalculator() {
   const [cbm, setCbm] = useState<number>(0)
   const [containerType, setContainerType] = useState<"20ft" | "40ft">("20ft")
   const [quantity, setQuantity] = useState<number>(1)
+  const [rates, setRates] = useState<ShippingRatesConfig>(DEFAULT_SHIPPING_RATES)
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const ratesData = await getShippingRatesConfig()
+        setRates(ratesData)
+      } catch {
+        // Keep defaults if config fetch fails.
+      }
+    })()
+  }, [])
 
   const volumetricWeight = useMemo(() => {
     if (length > 0 && width > 0 && height > 0) {
@@ -34,24 +47,24 @@ export function ShippingCalculator() {
     if (shippingType === "air") {
       const totalWeight = chargeableWeight * quantity
       return {
-        cost: totalWeight * 8.9,
-        breakdown: `${totalWeight.toFixed(2)}kg × $8.9/kg`,
+        cost: totalWeight * rates.AIR,
+        breakdown: `${totalWeight.toFixed(2)}kg × ${rates.currency}${rates.AIR}/kg`,
       }
     } else {
       let cost = 0
       let breakdown = ""
 
       if (cbm > 0) {
-        cost = cbm * 510
-        breakdown = `${cbm} CBM × $510/CBM`
+        cost = cbm * rates.SEA_CBM
+        breakdown = `${cbm} CBM × ${rates.currency}${rates.SEA_CBM}/CBM`
       } else if (containerType) {
-        cost = containerType === "20ft" ? 5400 : 7200
+        cost = containerType === "20ft" ? rates.SEA_20FT : rates.SEA_40FT
         breakdown = `1× ${containerType} Container`
       }
 
       return { cost, breakdown }
     }
-  }, [shippingType, chargeableWeight, cbm, containerType, quantity])
+  }, [shippingType, chargeableWeight, cbm, containerType, quantity, rates])
 
   const handleReset = () => {
     setWeight(0)
@@ -247,7 +260,7 @@ export function ShippingCalculator() {
           <CardContent className="space-y-6">
             <div>
               <p className="text-foreground/60 text-sm mb-2">Total Cost</p>
-              <p className="text-5xl font-bold text-primary">${calculate.cost.toFixed(2)}</p>
+              <p className="text-5xl font-bold text-primary">{rates.currency}{calculate.cost.toFixed(2)}</p>
             </div>
 
             <div className="p-3 bg-muted rounded">

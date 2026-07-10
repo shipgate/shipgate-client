@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Package, Calculator, FileText, Settings, MessageSquare, LogOut, Users, Truck, MapPin, ShoppingCart, BarChart3, Bell, ArrowRightCircle, ArrowRight, Wallet } from "lucide-react"
+import { LayoutDashboard, Package, Calculator, FileText, Settings, MessageSquare, LogOut, Users, Truck, MapPin, ShoppingCart, BarChart3, Bell, ArrowRightCircle, ArrowRight, Wallet, Mail } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { useAuthStore } from "@/store/auth"
@@ -23,10 +23,12 @@ const superAdminMenuItems = [
   { icon: Users, label: "Manage Operation Staffs", href: "/super-admin/manage-staff" },
   { icon: Truck, label: "Manage Couriers", href: "/super-admin/manage-couriers" },
   { icon: Users, label: "Customers", href: "/super-admin/customers" },
+  { icon: Mail, label: "Newsletter", href: "/super-admin/newsletter" },
   // { icon: MapPin, label: "Shipping Config", href: "/super-admin/shipping-config" },
   // { icon: ShoppingCart, label: "Carriers", href: "/super-admin/carriers" },
   { icon: Package, label: "All Shipments", href: "/super-admin/shipments" },
   { icon: FileText, label: "Manage Blog", href: "/super-admin/blog" },
+  { icon: Settings, label: "Settings", href: "/super-admin/settings" },
 
   // { icon: BarChart3, label: "Reports", href: "/super-admin/reports" },
   // { icon: Settings, label: "System Settings", href: "/super-admin/settings" },

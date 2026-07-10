@@ -3,7 +3,8 @@ import { RFQForm } from '@/components/calculator/rfq-form'
 import { ShippingCalculator } from '@/components/calculator/shipping-calculator'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { DEFAULT_SHIPPING_RATES, getShippingRatesConfig, type ShippingRatesConfig } from '@/lib/shipping-api'
 
 interface Props {
     
@@ -11,6 +12,19 @@ interface Props {
 
 const page = (props: Props) => {
     const [activeTab, setActiveTab] = useState("calculator")
+  const [rates, setRates] = useState<ShippingRatesConfig>(DEFAULT_SHIPPING_RATES)
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const ratesData = await getShippingRatesConfig()
+        setRates(ratesData)
+      } catch {
+        // Keep defaults if config fetch fails.
+      }
+    })()
+  }, [])
+
     return (
         <div>
             <div className="max-w-6xl mx-auto">
@@ -50,7 +64,7 @@ const page = (props: Props) => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <p className="text-2xl font-bold text-foreground">
-                    $8.90 <span className="text-lg font-normal text-foreground/60">/kg</span>
+                    {rates.currency}{rates.AIR} <span className="text-lg font-normal text-foreground/60">/kg</span>
                   </p>
                   <p className="text-sm text-foreground/70">Minimum charge may apply</p>
                 </div>
@@ -84,16 +98,16 @@ const page = (props: Props) => {
                 <div className="space-y-3">
                   <div>
                     <p className="font-semibold text-foreground">Per CBM</p>
-                    <p className="text-2xl font-bold text-foreground">$510</p>
+                    <p className="text-2xl font-bold text-foreground">{rates.currency}{rates.SEA_CBM}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <p className="font-semibold text-foreground">20ft Container</p>
-                      <p className="text-xl font-bold text-foreground">$5,400</p>
+                      <p className="text-xl font-bold text-foreground">{rates.currency}{rates.SEA_20FT}</p>
                     </div>
                     <div>
                       <p className="font-semibold text-foreground">40ft Container</p>
-                      <p className="text-xl font-bold text-foreground">$7,200</p>
+                      <p className="text-xl font-bold text-foreground">{rates.currency}{rates.SEA_40FT}</p>
                     </div>
                   </div>
                 </div>

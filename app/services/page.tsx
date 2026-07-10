@@ -3,13 +3,49 @@
 import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plane, Ship, Package, CheckCircle2 } from "lucide-react"
+import { Plane, Ship, Package, CheckCircle2, Copy } from "lucide-react"
 import { motion } from "motion/react"
 import Link from "next/link"
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
+import {
+  DEFAULT_SHIPPING_RATES,
+  DEFAULT_WAREHOUSE_ADDRESS,
+  getShippingRatesConfig,
+  getWarehouseAddressConfig,
+  type ShippingRatesConfig,
+  type WarehouseAddressConfig,
+} from "@/lib/shipping-api"
 
 
 
 export default function ServicesPage() {
+  const [rates, setRates] = useState<ShippingRatesConfig>(DEFAULT_SHIPPING_RATES)
+  const [warehouse, setWarehouse] = useState<WarehouseAddressConfig>(DEFAULT_WAREHOUSE_ADDRESS)
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const [ratesData, warehouseData] = await Promise.all([
+          getShippingRatesConfig(),
+          getWarehouseAddressConfig(),
+        ])
+        setRates(ratesData)
+        setWarehouse(warehouseData)
+      } catch {
+        // Keep defaults if config fetch fails.
+      }
+    })()
+  }, [])
+
+  const warehouseText = `${warehouse.name}, ${warehouse.number} ${warehouse.address}`
+  const warehouseNumberText = String(warehouse.number)
+
+  const copyToClipboard = (value: string) => {
+    navigator.clipboard.writeText(value)
+    toast.success("Copied to clipboard")
+  }
+
   return (
     <>
       <Navbar />
@@ -48,7 +84,7 @@ export default function ServicesPage() {
                   {[
                     { title: "Speed", desc: "10-15 days delivery from China to Nigeria" },
                     { title: "Tracking", desc: "Real-time tracking including flight routes" },
-                    { title: "Pricing", desc: "$8.90 per kilogram" },
+                    { title: "Pricing", desc: `${rates.currency}${rates.AIR} per kilogram` },
                     { title: "Ideal For", desc: "Electronics, documents, urgent items" },
                   ].map((item, idx) => (
                     <div key={idx} className="flex gap-4">
@@ -99,7 +135,10 @@ export default function ServicesPage() {
                 </p>
                 <ul className="space-y-4 mb-8">
                   {[
-                    { title: "Options", desc: "$510/CBM, $5400/20ft container, $7200/40ft container" },
+                    {
+                      title: "Options",
+                      desc: `${rates.currency}${rates.SEA_CBM}/CBM, ${rates.currency}${rates.SEA_20FT}/20ft container, ${rates.currency}${rates.SEA_40FT}/40ft container`,
+                    },
                     { title: "Duration", desc: "45-60 days delivery time" },
                     { title: "Tracking", desc: "Port-to-port tracking with detailed updates" },
                     { title: "Ideal For", desc: "Bulk orders, heavy items, cost-sensitive shipments" },
@@ -178,29 +217,54 @@ export default function ServicesPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div>
-                    <p className="font-semibold text-foreground mb-2">Guangzhou Distribution Center</p>
-                    <p className="text-foreground/70">123 Logistics Avenue, Tianhe District</p>
-                    <p className="text-foreground/70">Guangzhou, Guangdong 510610</p>
-                    <p className="text-foreground/70">China</p>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-foreground">{warehouse.name}</p>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(warehouse.name)}
+                        title="Copy warehouse name"
+                        aria-label="Copy warehouse name"
+                        className="h-7 w-7 rounded-md border border-primary/30 text-primary hover:bg-primary/10 inline-flex items-center justify-center"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <p className="text-foreground/80 font-medium text-sm">No. {warehouse.number}</p>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(warehouseNumberText)}
+                        title="Copy warehouse number"
+                        aria-label="Copy warehouse number"
+                        className="h-7 w-7 rounded-md border border-primary/30 text-primary hover:bg-primary/10 inline-flex items-center justify-center"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
+
+                  <div className="flex items-start gap-2">
+                    <p className="text-foreground/70 text-sm leading-relaxed flex-1">{warehouse.address}</p>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(warehouse.address)}
+                      title="Copy warehouse address"
+                      aria-label="Copy warehouse address"
+                      className="h-7 w-7 rounded-md border border-primary/30 text-primary hover:bg-primary/10 inline-flex items-center justify-center"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
                   <button
-                    onClick={() =>
-                      navigator.clipboard.writeText(
-                        "Guangzhou Distribution Center, 123 Logistics Avenue, Tianhe District, Guangzhou, Guangdong 510610, China",
-                      )
-                    }
-                    className="flex items-center gap-2 text-primary hover:text-primary/80 font-semibold transition"
+                    type="button"
+                    onClick={() => copyToClipboard(warehouseText)}
+                    className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-semibold transition"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                      />
-                    </svg>
-                    Copy Address to Clipboard
+                    <Copy className="w-4 h-4" />
+                    Copy Full Address
                   </button>
                 </div>
               </CardContent>
@@ -225,7 +289,12 @@ export default function ServicesPage() {
                 <tbody>
                   {[
                     { feature: "Delivery Time", air: "10-15 days", sea: "45-60 days", cons: "Varies" },
-                    { feature: "Cost", air: "$8.90/kg", sea: "$510/CBM", cons: "60% Savings" },
+                    {
+                      feature: "Cost",
+                      air: `${rates.currency}${rates.AIR}/kg`,
+                      sea: `${rates.currency}${rates.SEA_CBM}/CBM`,
+                      cons: "60% Savings",
+                    },
                     { feature: "Best For", air: "Urgent Items", sea: "Bulk Orders", cons: "Multiple Items" },
                     { feature: "Tracking", air: "Real-time", sea: "Real-time", cons: "Full Tracking" },
                     { feature: "Insurance", air: "Available", sea: "Available", cons: "Available" },

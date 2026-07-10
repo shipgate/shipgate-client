@@ -30,6 +30,7 @@ export type TrackingStage =
   | "ARRIVED_WAREHOUSE"
   | "OUT_FOR_DELIVERY"
   | "PENDING_DELIVERY"
+  | "COMPLETED"
 
 export type TrackingStageStatus = "PENDING" | "COMPLETED"
 
@@ -42,6 +43,34 @@ export interface TrackingStageUpdatePayload {
     parcelId: string
     status: TrackingStage | string
   }>
+}
+
+export interface ShippingRatesConfig {
+  AIR: number
+  SEA_CBM: number
+  SEA_20FT: number
+  SEA_40FT: number
+  currency: string
+}
+
+export interface WarehouseAddressConfig {
+  address: string
+  number: number
+  name: string
+}
+
+export const DEFAULT_SHIPPING_RATES: ShippingRatesConfig = {
+  AIR: 8.9,
+  SEA_CBM: 510,
+  SEA_20FT: 5400,
+  SEA_40FT: 7200,
+  currency: "$",
+}
+
+export const DEFAULT_WAREHOUSE_ADDRESS: WarehouseAddressConfig = {
+  name: "Guangzhou Distribution Center",
+  number: 123,
+  address: "Logistics Avenue, Tianhe District, Guangzhou, Guangdong 510610, China",
 }
 
 async function request<T = ShippingResponse>(path: string, options: ShippingApiOptions = {}) {
@@ -209,5 +238,55 @@ export async function cancelShipment(shipmentNumber: string, reason: string, tok
 export async function getPublicShipmentTracking(shipmentNumber: string) {
   return request<ShippingResponse>('/api/v1/shipping/shipments/' + encodeURIComponent(shipmentNumber) + '/tracking', {
     method: 'GET',
+  })
+}
+
+export async function getShippingRatesConfig(token?: string) {
+  const response = await request<ShippingResponse<Partial<ShippingRatesConfig>> | Partial<ShippingRatesConfig>>(
+    '/api/v1/shipping/config/rates',
+    {
+      method: 'GET',
+      token,
+    },
+  )
+
+  const payload = ((response as ShippingResponse<Partial<ShippingRatesConfig>>)?.data || response) as Partial<ShippingRatesConfig>
+
+  return {
+    ...DEFAULT_SHIPPING_RATES,
+    ...payload,
+  }
+}
+
+export async function setShippingRatesConfig(payload: ShippingRatesConfig, token: string) {
+  return request<ShippingResponse>('/api/v1/shipping/config/rates', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    token,
+  })
+}
+
+export async function getWarehouseAddressConfig(token?: string) {
+  const response = await request<ShippingResponse<Partial<WarehouseAddressConfig>> | Partial<WarehouseAddressConfig>>(
+    '/api/v1/shipping/config/warehouse-address',
+    {
+      method: 'GET',
+      token,
+    },
+  )
+
+  const payload = ((response as ShippingResponse<Partial<WarehouseAddressConfig>>)?.data || response) as Partial<WarehouseAddressConfig>
+
+  return {
+    ...DEFAULT_WAREHOUSE_ADDRESS,
+    ...payload,
+  }
+}
+
+export async function setWarehouseAddressConfig(payload: WarehouseAddressConfig, token: string) {
+  return request<ShippingResponse>('/api/v1/shipping/config/warehouse-address', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+    token,
   })
 }

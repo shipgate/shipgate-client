@@ -16,7 +16,7 @@ import {
 import { isAirShipment } from "@/lib/shipment-helpers"
 
 const TRACKING_STAGES: Array<{ value: TrackingStage; label: string; helper: string }> = [
-  { value: "PACKAGE_RECEIVED", label: "Package Received", helper: "Shipment is confirmed at origin." },
+
   { value: "IN_CUSTOMS", label: "In Customs", helper: "Shipment is being processed by customs." },
   { value: "IN_TRANSIT", label: "In Transit", helper: "Shipment is moving between facilities." },
   {
@@ -26,6 +26,7 @@ const TRACKING_STAGES: Array<{ value: TrackingStage; label: string; helper: stri
   },
   { value: "ARRIVED_WAREHOUSE", label: "Arrived Warehouse", helper: "Shipment is available at the warehouse." },
   { value: "OUT_FOR_DELIVERY", label: "Out for Delivery", helper: "Shipment is on its way to the recipient." },
+  { value: "COMPLETED", label: "Completed", helper: "Shipment has been delivered to the recipient." },
 ]
 
 const STAGE_STATUSES: Array<{ value: TrackingStageStatus; label: string }> = [
@@ -65,8 +66,9 @@ export function StatusUpdateForm({
   const [error, setError] = useState("")
   const [shipmentStatus, setShipmentStatus] = useState<string>("")
   const [shipmentMethod, setShipmentMethod] = useState<string>("")
+  const [deliveryMethod, setDeliveryMethod] = useState<string>("")
   const [locationAutoFilled, setLocationAutoFilled] = useState(true)
-
+  const filterdTrackingStages = deliveryMethod !== "HOME_DELIVERY" ? TRACKING_STAGES.filter((item) => item.value !== "OUT_FOR_DELIVERY") : TRACKING_STAGES
   const selectedStage = TRACKING_STAGES.find((item) => item.value === stage)
   const canSubmit = Boolean(token && shipmentNumber.trim() && stage && status && !submitting)
 
@@ -87,9 +89,11 @@ export function StatusUpdateForm({
   }
 
   const resetForm = () => {
-    setStage("IN_TRANSIT")
+    const next = filterdTrackingStages.findIndex((item) => item.value === stage)
+    const nextStage = filterdTrackingStages[next + 1] || filterdTrackingStages[next]
+    setStage(nextStage.value)
     setStatus("COMPLETED")
-    setLocation(getDefaultLocation("IN_TRANSIT", shipmentMethod))
+    setLocation("")
     setLocationAutoFilled(true)
     setNotes("")
     setParcelUpdates([{ parcelId: "", status: "" }])
@@ -133,6 +137,7 @@ export function StatusUpdateForm({
       setMessage(response.message || "Tracking updated successfully.")
       setShipmentNumber(normalizedShipmentNumber)
       resetForm()
+      loadShipment(normalizedShipmentNumber)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to update tracking.")
     } finally {
@@ -163,8 +168,13 @@ export function StatusUpdateForm({
       const response = await getShipmentDetails(id.trim(), token)
       const data: any = (response as any).data?.shipment || (response as any).data || response
       const method = String(data?.shipmentMethod || data?.shippingMethod || "").toUpperCase()
+      const deliveryMethod = String(data?.deliveryMethod || "").toUpperCase()
       setShipmentStatus(data?.currentStatus || data?.status || "")
       setShipmentMethod(method)
+      setDeliveryMethod(deliveryMethod)
+      const next = filterdTrackingStages.findIndex((item) => item.value === (data?.currentStatus || data?.stage || ""))
+      const nextStage = filterdTrackingStages[next + 1] || filterdTrackingStages[next]
+      setStage(nextStage.value)
 
       if (!location.trim() || locationAutoFilled) {
         setLocation(getDefaultLocation(stage, method))
@@ -241,7 +251,7 @@ export function StatusUpdateForm({
           <div className="space-y-3">
             <label className="text-sm font-semibold text-foreground">Stage</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {TRACKING_STAGES.map((option) => (
+              {filterdTrackingStages.map((option) => (
                 <button
                   type="button"
                   key={option.value}

@@ -2,10 +2,36 @@ import { Check, Ship, Zap } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { motion } from "motion/react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import {
+  DEFAULT_SHIPPING_RATES,
+  DEFAULT_WAREHOUSE_ADDRESS,
+  getShippingRatesConfig,
+  getWarehouseAddressConfig,
+  type ShippingRatesConfig,
+  type WarehouseAddressConfig,
+} from "@/lib/shipping-api"
 
 export function ShippingRoutesSection() {
     const [show, setShow] = useState(false)
+    const [rates, setRates] = useState<ShippingRatesConfig>(DEFAULT_SHIPPING_RATES)
+    const [warehouse, setWarehouse] = useState<WarehouseAddressConfig>(DEFAULT_WAREHOUSE_ADDRESS)
+
+    useEffect(() => {
+      ;(async () => {
+        try {
+          const [ratesData, warehouseData] = await Promise.all([
+            getShippingRatesConfig(),
+            getWarehouseAddressConfig(),
+          ])
+          setRates(ratesData)
+          setWarehouse(warehouseData)
+        } catch {
+          // Keep defaults if config fetch fails.
+        }
+      })()
+    }, [])
+
   return (
     <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-muted/30">
       <div className="max-w-7xl mx-auto">
@@ -69,7 +95,7 @@ export function ShippingRoutesSection() {
               {/* Pricing */}
               <div className="bg-white/50 backdrop-blur-sm rounded-xl p-6 mb-8 border border-primary/10">
                 <div className="text-sm text-foreground/70 mb-2">Competitive Pricing</div>
-                <div className="text-3xl font-bold text-primary mb-1">$8.90</div>
+                <div className="text-3xl font-bold text-primary mb-1">{rates.currency}{rates.AIR}</div>
                 <div className="text-sm text-foreground/70">per kilogram</div>
               </div>
 
@@ -93,7 +119,7 @@ export function ShippingRoutesSection() {
                         <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
                         <div>
                         <p className="font-semibold text-foreground">China Warehouse</p>
-                        <p className="text-foreground/70">Guangzhou Distribution Center</p>
+                        <p className="text-foreground/70">{warehouse?.name}</p>
                         </div>
                     </div>
                     <div className="border-l-2 border-primary/30 ml-1 h-4" />
@@ -202,13 +228,13 @@ export function ShippingRoutesSection() {
                 <div className="text-sm text-foreground/70 mb-2">Multiple Options</div>
                 <div className="space-y-2 text-lg font-bold text-blue-600">
                   <div>
-                    $510 <span className="text-sm text-foreground/70">per CBM</span>
+                    {rates.currency}{rates.SEA_CBM} <span className="text-sm text-foreground/70">per CBM</span>
                   </div>
                   <div>
-                    $5,400 <span className="text-sm text-foreground/70">20ft container</span>
+                    {rates.currency}{rates.SEA_20FT} <span className="text-sm text-foreground/70">20ft container</span>
                   </div>
                   <div>
-                    $7,200 <span className="text-sm text-foreground/70">40ft container</span>
+                    {rates.currency}{rates.SEA_40FT} <span className="text-sm text-foreground/70">40ft container</span>
                   </div>
                 </div>
               </div>
@@ -234,7 +260,7 @@ export function ShippingRoutesSection() {
                         <div className="w-2 h-2 rounded-full bg-blue-600 mt-2 flex-shrink-0" />
                         <div>
                         <p className="font-semibold text-foreground">China Warehouse</p>
-                        <p className="text-foreground/70">Guangzhou Distribution Center</p>
+                        <p className="text-foreground/70">{warehouse?.name}</p>
                         </div>
                     </div>
                     <div className="border-l-2 border-blue-300 ml-1 h-4" />
