@@ -10,6 +10,7 @@ export interface AuthUser {
   fullName: string
   email: string
   phone?: string
+  address?: string
   userType: UserRole
   verified?: boolean
   employeeId?: string

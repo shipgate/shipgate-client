@@ -16,6 +16,13 @@ export interface PaginationInfo {
   pages: number
 }
 
+export interface ProfilePayload {
+  fullName: string
+  email: string
+  phone?: string
+  address?: string
+}
+
 interface UsersResponse {
   success: boolean
   users: AuthUser[]
@@ -186,5 +193,27 @@ export async function addStaff(payload: {
     method: "POST",
     body: JSON.stringify(payload),
     token,
+  })
+}
+
+export async function getCurrentUserProfile(token: string) {
+  return request<{
+    success: boolean
+    user: AuthUser & { address?: string }
+  }>("/api/v1/auth/me", {
+    method: "GET",
+    token,
+  })
+}
+
+export async function updateCurrentUserProfile(payload: ProfilePayload, token: string) {
+  return request<{
+    success: boolean
+    message?: string
+    user: AuthUser & { address?: string }
+  }>("/api/v1/auth/me", {
+    method: "PUT",
+    token,
+    body: JSON.stringify(payload),
   })
 }

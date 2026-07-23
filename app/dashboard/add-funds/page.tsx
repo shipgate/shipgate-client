@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input"
 import { CreditCard, Banknote, Smartphone } from "lucide-react"
 import { useAuthStore } from "@/store/auth"
 import { fundWallet } from "@/lib/payments-api"
+import { NumericFormat } from "react-number-format";
+import { cn } from "@/lib/utils"
 
 const paymentMethods = [
-  { id: "card", name: "Credit/Debit Card", icon: CreditCard, description: "Visa, Mastercard" },
-  { id: "bank", name: "Bank Transfer", icon: Banknote, description: "Direct bank deposit" },
-  { id: "mobile", name: "Mobile Money", icon: Smartphone, description: "MTN, Airtel, GLO" },
+  { id: "card", name: "Paystack Checkout", icon: CreditCard, description: "Visa, Mastercard, Bank Transfer" },
 ]
 
 export default function AddFundsPage() {
@@ -74,14 +74,21 @@ export default function AddFundsPage() {
             <label className="text-sm font-medium text-foreground">Amount (NGN)</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">₦</span>
-              <Input
-                type="number"
-                placeholder="10,000"
+              <NumericFormat
+                thousandSeparator
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="pl-8"
+                onValueChange={(values) => {
+                  setAmount(values.value);
+                }}
+                placeholder="10,000"
+                className={cn(
+                  "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+                  "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+                  "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+                  "pl-7"
+                )}
               />
-            </div>
+            </div> 
           </div>
 
           {/* Quick Amount Buttons */}
@@ -95,7 +102,7 @@ export default function AddFundsPage() {
                   onClick={() => setAmount(quickAmount)}
                   className="text-sm"
                 >
-                  ₦{quickAmount}
+                  ₦{Number(quickAmount).toLocaleString()}
                 </Button>
               ))}
             </div>

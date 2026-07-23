@@ -135,7 +135,7 @@ export default function TrackPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid md:grid-cols-2 gap-6">
+                  <div className="grid md:grid-cols-2 gap-6"> 
                     <div>
                       <p className="text-foreground/60 text-sm">Shipping Type</p>
                       <p className="text-lg font-semibold text-foreground capitalize">

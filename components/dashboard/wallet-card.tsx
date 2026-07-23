@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { CreditCard, Plus } from "lucide-react"
+import { NumericFormat } from "react-number-format";
 
 interface WalletCardProps {
   balance: number
@@ -21,7 +22,16 @@ export function WalletCard({ balance }: WalletCardProps) {
       <CardContent className="space-y-6">
         <div>
           <p className="text-sm text-white/70 mb-2">Available Balance</p>
-          <p className="text-4xl font-bold">₦{balance.toFixed(2)}</p>
+          <p className="text-4xl font-bold">
+            <NumericFormat
+              value={balance}
+              displayType="text"
+              thousandSeparator
+              decimalScale={2}
+              fixedDecimalScale
+              prefix="₦"
+            />
+          </p>
         </div>
         <div className="space-y-2 flex flex-col gap-1">
           <a href="/dashboard/add-funds">

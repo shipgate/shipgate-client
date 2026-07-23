@@ -55,7 +55,7 @@ export function RecentShipments({ shipments }: { shipments: any[] }) {
         <CardTitle className="text-primary">Recent Shipments</CardTitle>
         <CardDescription>Your latest shipping activities</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4 h-48 overflow-y-scroll">
+      <CardContent className="space-y-4 sm:h-48 overflow-y-scroll">
         <div className="space-y-3 flex flex-col gap-2">
           {shipments.map((shipment) => (
             <Link key={shipment.shipmentNumber} href={`/track?id=${shipment.shipmentNumber}`}>

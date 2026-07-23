@@ -30,6 +30,10 @@ export function clearAuthCookie() {
   document.cookie = "auth_token=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;"
 }
 
+export function clearUserRoleCookie() {
+  document.cookie = "user_role=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;"
+}
+
 export function setUserRoleCookie(role: string, expiryDays: number = 7) {
   const date = new Date()
   date.setTime(date.getTime() + expiryDays * 24 * 60 * 60 * 1000)

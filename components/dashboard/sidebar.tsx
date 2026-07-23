@@ -1,12 +1,15 @@
 "use client"
 
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Package, Calculator, FileText, Settings, MessageSquare, LogOut, Users, Truck, MapPin, ShoppingCart, BarChart3, Bell, ArrowRightCircle, ArrowRight, Wallet, Mail } from "lucide-react"
+import { LayoutDashboard, Package, Calculator, FileText, Settings, MessageSquare, LogOut, Users, Truck, MapPin, Wallet, Mail, ChevronRight, UserRound } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { useAuthStore } from "@/store/auth"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
+import { clearAuthCookie, clearUserRoleCookie } from "@/lib/cookies"
 
 const customerMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -58,6 +61,9 @@ const courierMenuItems = [
 
 export function Sidebar({userRole = "customer", collapsed = false}: {userRole?: string, collapsed?: boolean}) {
   const pathname = usePathname()
+  const router = useRouter()
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false)
+  const accountMenuRef = useRef<HTMLDivElement>(null)
 
   const getMenuItems = () => {
     switch (userRole) {
@@ -76,7 +82,44 @@ export function Sidebar({userRole = "customer", collapsed = false}: {userRole?: 
 
   const menuItems = getMenuItems()
 
-  const {user} = useAuthStore()
+  const { user, clearAuth } = useAuthStore()
+
+  const userName = user?.fullName || "User"
+  const nameParts = userName.split(" ").filter(Boolean)
+  const firstInitial = nameParts[0]?.charAt(0) || "U"
+  const secondInitial = nameParts[1]?.charAt(0) || ""
+  const initials = `${firstInitial}${secondInitial}`
+
+  const profileRouteByRole: Record<string, string> = {
+    customer: "/dashboard/profile",
+    admin: "/admin/profile",
+    "super-admin": "/super-admin/profile",
+    staff: "/staff/profile",
+    courier: "/courier/profile",
+  }
+
+  const profileHref = profileRouteByRole[userRole] || "/dashboard/profile"
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(event.target as Node)) {
+        setIsAccountMenuOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleOutsideClick)
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick)
+    }
+  }, [])
+
+  const handleSignOut = () => {
+    clearAuth()
+    clearAuthCookie()
+    clearUserRoleCookie()
+    setIsAccountMenuOpen(false)
+    router.push("/login")
+  }
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -87,13 +130,13 @@ export function Sidebar({userRole = "customer", collapsed = false}: {userRole?: 
         <nav className="space-y-2 ">
           {/* Logo */}
         <div className={`flex items-center max-md:hidden ${collapsed ? "hidden" : ""}`}>
-            <img src="/logo.png" alt="" className="w-[100px] h-[100px]" />
+            <img src="/logo.png" alt="" className="w-25 h-25" />
         </div>
           {menuItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href
             return (
-              <Link href={item.href}>
+              <Link href={item.href} key={item.href}>
                     <div
                       className={cn(
                         "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ",
@@ -102,7 +145,7 @@ export function Sidebar({userRole = "customer", collapsed = false}: {userRole?: 
                     >
                       <Tooltip key={item.href}>
                         <TooltipTrigger asChild>
-                        <Icon className={`w-5 h-5 flex-shrink-0 ${collapsed ? "hover:text-primary" : ""}`} />   
+                        <Icon className={`w-5 h-5 shrink-0 ${collapsed ? "hover:text-primary" : ""}`} />   
                         </TooltipTrigger>
                           {collapsed && <TooltipContent side="right" sideOffset={1} className="ml-2">{item.label}</TooltipContent>}
                       </Tooltip>
@@ -115,19 +158,56 @@ export function Sidebar({userRole = "customer", collapsed = false}: {userRole?: 
           })}
         </nav>
 
-        {/* Logout */}
-        <div className={` ${!collapsed? "border-t border-border" : "" } pt-6`}>
-          <a href="/">
-            <button className="flex items-center gap-3 px-4 py-3 w-full text-foreground hover:bg-muted rounded-lg transition-colors">
-              <Avatar>
-                <AvatarImage src="https://github.com/shadcn.png" />
-                <AvatarFallback>{user?.fullName.charAt(0)}{user?.fullName.split(" ")[1].charAt(0)}</AvatarFallback>
-              </Avatar>
-              {!collapsed && <span>{user?.fullName.split(" ")[0]}</span>}
-              {!collapsed && <LogOut className={`w-5 h-5 text-muted-foreground ${collapsed ? "" : "ml-auto"}`} />}
-              
-            </button>
-          </a>
+        <div className={`${!collapsed ? "border-t border-border" : ""} pt-6 relative`} ref={accountMenuRef}>
+          {isAccountMenuOpen && (
+            <div className="absolute bottom-full left-0 mb-3 w-65 rounded-2xl border border-border bg-white shadow-xl overflow-hidden z-40">
+              <div className="p-4 bg-muted/40">
+                <div className="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarImage src="https://github.com/shadcn.png" />
+                    <AvatarFallback>{initials}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm truncate">{userName}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.email || "No email"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-2">
+                <Link
+                  href={profileHref}
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                  onClick={() => setIsAccountMenuOpen(false)}
+                >
+                  <UserRound className="w-4 h-4 text-muted-foreground" />
+                  View Profile
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                >
+                  <LogOut className="w-4 h-4 text-muted-foreground" />
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setIsAccountMenuOpen((prev) => !prev)}
+            className="flex items-center gap-3 px-4 py-3 w-full text-foreground hover:bg-muted rounded-lg transition-colors"
+          >
+            <Avatar>
+              <AvatarImage src="https://github.com/shadcn.png" />
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+            {!collapsed && <span className="truncate">{nameParts[0] || "User"}</span>}
+            {!collapsed && <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto" />}
+          </button>
         </div>
         </div>
       </aside>

@@ -134,7 +134,7 @@ export function PaymentOptionsModal({
             type="button"
             onClick={handleWalletPayment}
             disabled={loading}
-            className="w-full rounded-lg border border-primary bg-primary/5 p-4 text-left transition hover:bg-primary/10 disabled:opacity-60"
+            className="w-full rounded-lg border border-primary  p-4 text-left transition hover:bg-primary/10 disabled:opacity-60"
           >
             <div className="flex items-center gap-3">
               <Wallet className="w-5 h-5 text-primary" />
