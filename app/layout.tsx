@@ -29,6 +29,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com"/> 
         <link rel="preconnect" href="https://fonts.gstatic.com"  />
         <link href="https://fonts.googleapis.com/css2?family=Onest:wght@100..900&display=swap" rel="stylesheet"></link>
+        <meta name="google-site-verification" content="ninqtOan_PVdkP116AKzVVU0h5GsdpJBMZnWJA3pEKA" />
       </head>
       <body  style={{fontFamily: `"Onest", sans-serif`}}>
           <Script
