@@ -131,9 +131,14 @@ export default function ShipmentsContent() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">All Shipments</h1>
-        <p className="text-foreground/60">Manage super-admin shipment operations and pricing.</p>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">All Shipments</h1>
+          <p className="text-foreground/60">Manage super-admin shipment operations and pricing.</p>
+        </div>
+        <Link href="/super-admin/shipments/add">
+          <Button>Add Shipment</Button>
+        </Link>
       </div>
 
       <Card>

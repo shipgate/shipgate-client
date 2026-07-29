@@ -5,10 +5,19 @@ import { Navbar } from "@/components/navbar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Phone, Mail, Clock, MessageCircle } from "lucide-react"
+import { Phone, Mail, Clock, MessageCircle, Send } from "lucide-react"
+import { toast } from "sonner"
+import { submitPublicSupportTicket } from "@/lib/support-tickets-api"
 
 export default function SupportPage() {
   const [selectedFaq, setSelectedFaq] = useState<number | null>(null)
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    subject: "",
+    message: "",
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const faqs = [
     {
@@ -44,6 +53,31 @@ export default function SupportPage() {
       a: "Use our online calculator for instant quotes or submit an RFQ for complex shipments. Our team responds to RFQs within 2 hours.",
     },
   ]
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+
+    try {
+      await submitPublicSupportTicket(formData)
+      toast.success("Support ticket submitted successfully")
+      setFormData({
+        fullName: "",
+        email: "",
+        subject: "",
+        message: "",
+      })
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Unable to submit support ticket")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <>
@@ -121,31 +155,36 @@ export default function SupportPage() {
               <CardDescription>Fill out the form below and we'll get back to you shortly</CardDescription>
             </CardHeader>
             <CardContent>
-              <form className="space-y-4">
+              <form className="space-y-4" onSubmit={handleSubmit}>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-foreground mb-2">Name</label>
-                    <Input placeholder="Your name" />
+                    <Input name="fullName" value={formData.fullName} onChange={handleInputChange} placeholder="Your name" required />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-foreground mb-2">Email</label>
-                    <Input type="email" placeholder="your@email.com" />
+                    <Input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="your@email.com" required />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">Subject</label>
-                  <Input placeholder="What is this about?" />
+                  <Input name="subject" value={formData.subject} onChange={handleInputChange} placeholder="What is this about?" required />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">Message</label>
                   <textarea
+                    name="message"
+                    value={formData.message}
+                    onChange={handleInputChange}
                     placeholder="Tell us how we can help..."
                     rows={5}
                     className="w-full px-3 py-2 border border-border rounded-lg"
+                    required
                   />
                 </div>
-                <Button className="bg-primary hover:bg-primary/90 text-white w-full h-12 font-semibold">
-                  Send Message
+                <Button type="submit" disabled={isSubmitting} className="bg-primary hover:bg-primary/90 text-white w-full h-12 font-semibold">
+                  <Send className="w-4 h-4 mr-2" />
+                  {isSubmitting ? "Sending..." : "Send Message"}
                 </Button>
               </form>
             </CardContent>

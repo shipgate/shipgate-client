@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { DEFAULT_SHIPPING_RATES, getShippingRatesConfig, type ShippingRatesConfig } from "@/lib/shipping-api"
+import Link from "next/dist/client/link"
 
-export function ShippingCalculator() {
+export function ShippingCalculator({setActiveTab}: {setActiveTab: (tab: string) => void}) {
   const [shippingType, setShippingType] = useState<"air" | "sea">("air")
   const [weight, setWeight] = useState<number>(0)
   const [length, setLength] = useState<number>(0)
@@ -278,8 +279,12 @@ export function ShippingCalculator() {
               <p className="text-xs text-foreground/60 font-semibold">✓ Customs Handling</p>
               <p className="text-xs text-foreground/60 font-semibold">✓ Real-time Tracking</p>
             </div>
-
-            <Button className="w-full bg-primary hover:bg-primary/90 text-white h-12 font-semibold">
+        
+            
+            <Button 
+            className="w-full bg-primary hover:bg-primary/90 text-white h-12 font-semibold"
+            onClick={() => setActiveTab("rfq")}
+            >
               Request Quote
             </Button>
           </CardContent>

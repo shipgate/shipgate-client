@@ -196,6 +196,21 @@ export async function addStaff(payload: {
   })
 }
 
+export async function addCustomerByAdmin(payload: {
+  fullName: string
+  email: string
+  phone: string
+  address: string
+  password: string
+  confirmPassword: string
+}, token: string) {
+  return request<Pick<ApiResponse, "success" | "message" | "customer">>("/api/v1/auth/customer/add", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    token,
+  })
+}
+
 export async function getCurrentUserProfile(token: string) {
   return request<{
     success: boolean

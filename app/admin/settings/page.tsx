@@ -57,69 +57,6 @@ export default function AdminSettingsPage() {
         <p className="text-foreground/60">Manage your profile and security settings</p>
       </div>
 
-      {/* Profile Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle>Profile Information</CardTitle>
-              <CardDescription>Update your personal details</CardDescription>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)}>
-              {isEditing ? "Cancel" : "Edit"}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">Full Name</label>
-            <Input
-              name="name"
-              value={profileData.name}
-              onChange={handleProfileChange}
-              disabled={!isEditing}
-              className="disabled:opacity-50"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">Email</label>
-            <Input
-              name="email"
-              type="email"
-              value={profileData.email}
-              onChange={handleProfileChange}
-              disabled={!isEditing}
-              className="disabled:opacity-50"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">Phone Number</label>
-            <Input
-              name="phone"
-              value={profileData.phone}
-              onChange={handleProfileChange}
-              disabled={!isEditing}
-              className="disabled:opacity-50"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">Address</label>
-            <Input
-              name="address"
-              value={profileData.address}
-              onChange={handleProfileChange}
-              disabled={!isEditing}
-              className="disabled:opacity-50"
-            />
-          </div>
-          {isEditing && (
-            <Button onClick={handleSaveProfile} className="w-full bg-primary hover:bg-primary/90">
-              Save Changes
-            </Button>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Password Reset Section */}
       <Card>
         <CardHeader>

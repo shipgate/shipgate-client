@@ -20,7 +20,8 @@ export default function TrackPage() {
   const [shipment, setShipment] = useState<any>(null);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState('');
-  const price = shipment?.pricing?.totalPrice ? shipment.pricing.totalPrice.toLocaleString() : 'pending';
+  const shipmentWeight = shipment?.weightInKg ?? shipment?.weight;
+  const weightLabel = shipmentWeight || shipmentWeight === 0 ? `${shipmentWeight} kg` : 'pending';
 
   useEffect(() => {
     if (trackingNumber) {
@@ -146,12 +147,6 @@ export default function TrackPage() {
                       <p className="text-foreground/60 text-sm">Estimated Delivery</p>
                       <p className="text-lg font-semibold text-foreground">{shipment.estimatedDelivery}</p>
                     </div> */}
-                    {shipment.weight && (
-                      <div>
-                        <p className="text-foreground/60 text-sm">Weight</p>
-                        <p className="text-lg font-semibold text-foreground">{shipment.weight}</p>
-                      </div>
-                    )}
                     {shipment.containerType && (
                       <div>
                         <p className="text-foreground/60 text-sm">Container</p>
@@ -163,8 +158,8 @@ export default function TrackPage() {
                       <p className="text-lg font-semibold text-foreground">{shipment.carrier}</p>
                     </div> */}
                     <div>
-                      <p className="text-foreground/60 text-sm">Total Cost</p>
-                      <p className="text-lg font-semibold text-primary">{price}</p>
+                      <p className="text-foreground/60 text-sm">Weight</p>
+                      <p className="text-lg font-semibold text-primary">{weightLabel}</p>
                     </div>
                   </div>
                 </CardContent>

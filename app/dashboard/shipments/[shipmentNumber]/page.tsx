@@ -175,7 +175,7 @@ export default function ShipmentDetailsPage() {
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 w-full">
                 <div>
                   <CardTitle className="text-2xl">{shipment.shipmentNumber || shipment.trackingNumber}</CardTitle>
-                  <CardDescription>{shipment.shipmentType ? `${shipment.shipmentType} • ${shipment.shipmentMethod}` : shipment.shipmentMethod}</CardDescription>
+                  <CardDescription>{shipment.shipmentType ? `${shipment.shipmentType} • ${shipment.shipmentMethod}` : shipment.shipmentMethod} • {shipment.deliveryMethod || "N/A"}</CardDescription>
                 </div>
                 <div className="space-y-2 text-right">
                   <Badge className={getStatusClass(String(shipment.currentStatus || "Unknown"))}>
@@ -187,10 +187,6 @@ export default function ShipmentDetailsPage() {
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-3 gap-6">
-                <div>
-                  <p className="text-foreground/60 text-sm">Delivery Method</p>
-                  <p className="text-lg font-semibold text-foreground">{shipment.deliveryMethod || "N/A"}</p>
-                </div>
                 <div>
                   <p className="text-foreground/60 text-sm">Payment Status</p>
                   <p className={`text-lg font-semibold text-foreground ${paymentStatus === "PAID" ? "text-green-700" : "text-red-500"}`}>{paymentStatus}</p>

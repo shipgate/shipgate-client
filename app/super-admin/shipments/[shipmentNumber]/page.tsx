@@ -11,7 +11,7 @@ import { TrackingTimeline } from "@/components/tracking/tracking-timeline"
 import { TrackingMap } from "@/components/tracking/tracking-map"
 import { ArrowLeft, RefreshCw } from "lucide-react"
 import { useAuthStore } from "@/store/auth"
-import { assignShipmentPricing, getShipmentDetails, markPackageAsReceived } from "@/lib/shipping-api"
+import { assignShipmentPricing, assignShipmentWeight, getShipmentDetails, markPackageAsReceived } from "@/lib/shipping-api"
 import { buildTimelineFromShipment, formatStatusLabel, getStatusBadgeClass } from "@/lib/shipment-helpers"
 
 export default function SuperAdminShipmentDetailsPage() {
@@ -26,6 +26,7 @@ export default function SuperAdminShipmentDetailsPage() {
   const [message, setMessage] = useState("")
   const [actionMessage, setActionMessage] = useState("")
   const [assignedPrice, setAssignedPrice] = useState("")
+  const [assignedWeight, setAssignedWeight] = useState("")
   const [currency, setCurrency] = useState("NGN")
   const [charges, setCharges] = useState([{ description: "", amount: "" }])
   const [receiveLocation, setReceiveLocation] = useState("")
@@ -46,6 +47,8 @@ export default function SuperAdminShipmentDetailsPage() {
         setAssignedPrice(data.pricing.basePrice ? String(data.pricing.basePrice) : "")
         setCurrency(data.pricing.currency || "NGN")
       }
+      const weightValue = data?.weightInKg ?? data?.weight
+      setAssignedWeight(weightValue || weightValue === 0 ? String(weightValue) : "")
       if (data?.shipmentType === "CONSOLIDATION" && Array.isArray(data.parcels) && data.parcels.length > 0) {
         setSelectedParcelIds([])
       } else {
@@ -88,6 +91,24 @@ export default function SuperAdminShipmentDetailsPage() {
     }
   }
 
+  const handleAssignWeight = async () => {
+    if (!token || !shipmentNumber) return
+    const parsedWeight = Number(assignedWeight)
+    if (!Number.isFinite(parsedWeight) || parsedWeight <= 0) {
+      setActionMessage("Enter a valid shipment weight in KG.")
+      return
+    }
+
+    setActionMessage("")
+    try {
+      await assignShipmentWeight(shipmentNumber, { weight: parsedWeight }, token)
+      setActionMessage("Shipment weight updated successfully.")
+      loadShipment()
+    } catch (err) {
+      setActionMessage(err instanceof Error ? err.message : "Unable to update shipment weight.")
+    }
+  }
+
   const handleMarkReceived = async () => {
     if (!token || !shipmentNumber) return
     setActionMessage("")
@@ -125,6 +146,8 @@ export default function SuperAdminShipmentDetailsPage() {
     : shipment?.totalAmount
     ? `₦${shipment.totalAmount.toLocaleString()}`
     : "Pending"
+  const shipmentWeight = shipment?.weightInKg ?? shipment?.weight
+  const currentWeightLabel = shipmentWeight || shipmentWeight === 0 ? `${shipmentWeight} kg` : "Pending"
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -164,7 +187,7 @@ export default function SuperAdminShipmentDetailsPage() {
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 w-full">
                 <div>
                   <CardTitle className="text-2xl">{shipment.shipmentNumber || shipment.id}</CardTitle>
-                  <CardDescription>{shipment.shipmentType ? `${shipment.shipmentType} • ${shipment.shipmentMethod}` : shipment.shipmentMethod}</CardDescription>
+                  <CardDescription>{shipment.shipmentType ? `${shipment.shipmentType} • ${shipment.shipmentMethod}` : shipment.shipmentMethod} • {shipment.deliveryMethod || "N/A"}</CardDescription>
                 </div>
                 <div className="space-y-2 text-right">
                   <Badge className={getStatusBadgeClass(String(shipment.currentStatus || shipment.status || "Unknown"))}>
@@ -175,11 +198,7 @@ export default function SuperAdminShipmentDetailsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div>
-                  <p className="text-foreground/60 text-sm">Delivery Method</p>
-                  <p className="text-lg font-semibold text-foreground">{shipment.deliveryMethod || "N/A"}</p>
-                </div>
+              <div className="grid md:grid-cols-4 gap-6">
                 <div>
                   <p className="text-foreground/60 text-sm">Payment Status</p>
                   <p className={`text-lg font-semibold text-foreground ${paymentStatus === "PAID" ? "text-green-700" : "text-red-500"}`}>{paymentStatus}</p>
@@ -187,6 +206,10 @@ export default function SuperAdminShipmentDetailsPage() {
                 <div>
                   <p className="text-foreground/60 text-sm">Price</p>
                   <p className="text-lg font-semibold text-primary">{currentPriceLabel}</p>
+                </div>
+                <div>
+                  <p className="text-foreground/60 text-sm">Weight</p>
+                  <p className="text-lg font-semibold text-foreground">{currentWeightLabel}</p>
                 </div>
               </div>
             </CardContent>
@@ -305,6 +328,22 @@ export default function SuperAdminShipmentDetailsPage() {
                       <Button variant="outline" size="sm" onClick={() => removeCharge(index)}>Remove</Button>
                     </div>
                   ))}
+                </div>
+                <div className="space-y-3 border-t border-border pt-4">
+                  <p className="text-sm font-semibold text-foreground">Weight (KG)</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Shipment weight in KG"
+                      value={assignedWeight}
+                      onChange={(e) => setAssignedWeight(e.target.value)}
+                    />
+                    <div className="md:col-span-2 flex justify-end">
+                      <Button onClick={handleAssignWeight}>Save Weight</Button>
+                    </div>
+                  </div>
                 </div>
                 {actionMessage ? <p className="text-sm text-foreground/70">{actionMessage}</p> : null}
                 <div className="flex justify-end gap-2">

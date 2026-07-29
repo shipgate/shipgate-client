@@ -106,6 +106,14 @@ export async function createShipment(payload: unknown, token: string) {
   })
 }
 
+export async function createAdminShipment(payload: unknown, token: string) {
+  return request<ShippingResponse>('/api/v1/shipping/admin/shipments', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    token,
+  })
+}
+
 export async function getCustomerShipments(token: string, page = 1, limit = 10) {
   return request<PaginatedShippingResponse<any[]>>(`/api/v1/shipping/shipments?page=${page}&limit=${limit}`, {
     method: 'GET',
@@ -207,6 +215,14 @@ export async function updateTrackingStage(
 export async function assignShipmentPricing(shipmentNumber: string, payload: unknown, token: string) {
   return request<ShippingResponse>(`/api/v1/shipping/admin/shipments/${encodeURIComponent(shipmentNumber)}/pricing`, {
     method: 'POST',
+    body: JSON.stringify(payload),
+    token,
+  })
+}
+
+export async function assignShipmentWeight(shipmentNumber: string, payload: { weight: number }, token: string) {
+  return request<ShippingResponse>(`/api/v1/shipping/admin/shipments/${encodeURIComponent(shipmentNumber)}/weight`, {
+    method: 'PUT',
     body: JSON.stringify(payload),
     token,
   })

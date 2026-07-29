@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Send } from "lucide-react"
+import { toast } from "sonner"
+import { submitPublicRfq } from "@/lib/rfq-api"
 
 export function RFQForm() {
   const [formData, setFormData] = useState({
@@ -25,16 +27,54 @@ export function RFQForm() {
   })
 
   const [submitted, setSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSubmitted(true)
-    setTimeout(() => setSubmitted(false), 5000)
+    setIsSubmitting(true)
+
+    try {
+      const shipmentMethod = formData.shippingType === "air" ? "Air Shipping" : "Sea Shipping"
+      const weight = formData.weight ? Number(formData.weight) : undefined
+      const cbmVolume = formData.cbm ? Number(formData.cbm) : undefined
+
+      await submitPublicRfq({
+        fullName: formData.name,
+        company: formData.company,
+        email: formData.email,
+        phone: formData.phone,
+        shipmentMethod,
+        itemsDescription: formData.items,
+        weight,
+        cbmVolume,
+        containerType: formData.shippingType === "sea" ? formData.containerType.toUpperCase() : undefined,
+        specialRequirements: formData.specialRequirements,
+      })
+
+      setSubmitted(true)
+      toast.success("RFQ submitted successfully")
+      setFormData((prev) => ({
+        ...prev,
+        name: "",
+        email: "",
+        phone: "",
+        company: "",
+        weight: "",
+        cbm: "",
+        items: "",
+        specialRequirements: "",
+      }))
+      setTimeout(() => setSubmitted(false), 5000)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Unable to submit RFQ")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -182,10 +222,11 @@ export function RFQForm() {
 
             <Button
               type="submit"
+              disabled={isSubmitting}
               className="w-full bg-primary hover:bg-primary/90 text-white h-12 font-semibold flex items-center justify-center gap-2"
             >
               <Send className="w-5 h-5" />
-              Submit RFQ
+              {isSubmitting ? "Submitting..." : "Submit RFQ"}
             </Button>
           </form>
         </CardContent>

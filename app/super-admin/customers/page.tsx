@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge"
 import { Mail, Phone, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useAuthStore } from "@/store/auth"
-import { getUsers, deleteUser } from "@/lib/auth-api"
+import { addCustomerByAdmin, getUsers, deleteUser } from "@/lib/auth-api"
 import { ConfirmationDialog } from "@/components/confirm-dialog"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import type { AuthUser } from "@/store/auth"
+import { Input } from "@/components/ui/input"
 
 interface ConfirmDialogState {
   open: boolean
@@ -27,6 +28,15 @@ export default function ManageCustomers() {
   const [pagination, setPagination] = useState<PaginationInfo>({ total: 0, page: 1, limit: 10, pages: 0 })
   const [loading, setLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [customerForm, setCustomerForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    address: "",
+    password: "",
+    confirmPassword: "",
+  })
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>({
     open: false,
     id: "",
@@ -69,6 +79,30 @@ export default function ManageCustomers() {
     }
   }
 
+  const handleCreateCustomer = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!token) return
+
+    setIsCreating(true)
+    try {
+      await addCustomerByAdmin(customerForm, token)
+      toast.success("Customer created successfully")
+      setCustomerForm({
+        fullName: "",
+        email: "",
+        phone: "",
+        address: "",
+        password: "",
+        confirmPassword: "",
+      })
+      fetchCustomers(1)
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create customer")
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   if (loading) {
     return <LoadingSpinner label="Loading customers..." />
   }
@@ -81,6 +115,63 @@ export default function ManageCustomers() {
           <p className="text-foreground/60">View and manage customer accounts</p>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Add Customer</CardTitle>
+          <CardDescription>Create a customer account from super-admin dashboard</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form className="space-y-4" onSubmit={handleCreateCustomer}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                placeholder="Full name"
+                value={customerForm.fullName}
+                onChange={(e) => setCustomerForm((prev) => ({ ...prev, fullName: e.target.value }))}
+                required
+              />
+              <Input
+                type="email"
+                placeholder="Email"
+                value={customerForm.email}
+                onChange={(e) => setCustomerForm((prev) => ({ ...prev, email: e.target.value }))}
+                required
+              />
+              <Input
+                placeholder="Phone"
+                value={customerForm.phone}
+                onChange={(e) => setCustomerForm((prev) => ({ ...prev, phone: e.target.value }))}
+                required
+              />
+              <Input
+                placeholder="Address"
+                value={customerForm.address}
+                onChange={(e) => setCustomerForm((prev) => ({ ...prev, address: e.target.value }))}
+                required
+              />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={customerForm.password}
+                onChange={(e) => setCustomerForm((prev) => ({ ...prev, password: e.target.value }))}
+                required
+              />
+              <Input
+                type="password"
+                placeholder="Confirm password"
+                value={customerForm.confirmPassword}
+                onChange={(e) => setCustomerForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button type="submit" disabled={isCreating}>
+                {isCreating ? "Creating..." : "Create Customer"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

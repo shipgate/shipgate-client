@@ -46,7 +46,7 @@ export default function CalculatorPage() {
 
             {/* Calculator Tab */}
             <TabsContent value="calculator">
-              <ShippingCalculator />
+              <ShippingCalculator setActiveTab={setActiveTab} />
             </TabsContent>
 
             {/* RFQ Tab */}

@@ -266,6 +266,9 @@ export default function ServicesPage() {
                     <Copy className="w-4 h-4" />
                     Copy Full Address
                   </button>
+                  <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900">
+                    Please write the customer name (your full name), the phone number 0813 672 9646 (Shipgate's phone number), and destination city (your city in Nigeria) on the outside of the carton; packages without this information on the outer carton will be rejected. Thank you!
+                  </p>
                 </div>
               </CardContent>
             </Card>

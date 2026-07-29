@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { useState } from "react";
 import { Users, Package, Truck, AlertCircle } from "lucide-react"
 import { useAuthStore } from "@/store/auth";
+import Link from "next/link";
 
 export default function SuperAdminDashboard() {
   const stats = [
@@ -73,16 +74,22 @@ export default function SuperAdminDashboard() {
             <div className="p-4 border border-border rounded-lg hover:shadow-md transition-shadow">
               <h3 className="font-semibold mb-2">Manage Admins & Staff</h3>
               <p className="text-sm text-foreground/60 mb-4">Create, edit, and manage admin accounts and staff</p>
+              <Link href="/super-admin/admins">
+              
+              </Link>
               <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
                 Create Admin
               </Button>
             </div>
+            
             <div className="p-4 border border-border rounded-lg hover:shadow-md transition-shadow">
               <h3 className="font-semibold mb-2">Manage Couriers</h3>
               <p className="text-sm text-foreground/60 mb-4">Manage delivery agents and assign shipments</p>
-              <Button variant="outline" size="sm">
-                Manage Couriers
-              </Button>
+              <Link href="/super-admin/couriers">
+                <Button variant="outline" size="sm">
+                  Manage Couriers
+                </Button>
+              </Link>
             </div>
           </div>
         </CardContent>

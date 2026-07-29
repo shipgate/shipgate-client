@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Package, Calculator, FileText, Settings, MessageSquare, LogOut, Users, Truck, MapPin, Wallet, Mail, ChevronRight, UserRound } from "lucide-react"
+import { LayoutDashboard, Package, Calculator, FileText, Settings, MessageSquare, LogOut, Users, Truck, MapPin, Wallet, ChevronRight, UserRound, Megaphone } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { useAuthStore } from "@/store/auth"
@@ -17,7 +17,7 @@ const customerMenuItems = [
   { icon: Wallet, label: "My Wallet", href: "/dashboard/wallet" },
   { icon: Calculator, label: "Calculator", href: "/dashboard/calculator" },
   { icon: FileText, label: "Invoices", href: "/dashboard/invoices" },
-  { icon: MessageSquare, label: "Support", href: "/dashboard/support" },
+  { icon: MessageSquare, label: "Communications", href: "/dashboard/support" },
 ]
 
 const superAdminMenuItems = [
@@ -26,7 +26,7 @@ const superAdminMenuItems = [
   { icon: Users, label: "Manage Operation Staffs", href: "/super-admin/manage-staff" },
   { icon: Truck, label: "Manage Couriers", href: "/super-admin/manage-couriers" },
   { icon: Users, label: "Customers", href: "/super-admin/customers" },
-  { icon: Mail, label: "Newsletter", href: "/super-admin/newsletter" },
+  { icon: Megaphone, label: "Communications", href: "/super-admin/communications" },
   // { icon: MapPin, label: "Shipping Config", href: "/super-admin/shipping-config" },
   // { icon: ShoppingCart, label: "Carriers", href: "/super-admin/carriers" },
   { icon: Package, label: "All Shipments", href: "/super-admin/shipments" },
@@ -41,6 +41,7 @@ const adminMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
   { icon: Package, label: "All Shipments", href: "/admin/shipments" },
   { icon: Users, label: "Customers", href: "/admin/customers" },
+  { icon: Megaphone, label: "Communications", href: "/admin/communications" },
   { icon: MapPin, label: "Status Updates", href: "/admin/status-updates" },
   { icon: Truck, label: "Assign to Couriers", href: "/admin/assign-couriers" },
   { icon: FileText, label: "Manage Blog", href: "/admin/blog" },
