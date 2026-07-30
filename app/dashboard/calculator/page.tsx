@@ -45,7 +45,7 @@ const page = (props: Props) => {
 
             {/* Calculator Tab */}
             <TabsContent value="calculator">
-              <ShippingCalculator />
+              <ShippingCalculator setActiveTab={setActiveTab} />
             </TabsContent>
 
             {/* RFQ Tab */}
