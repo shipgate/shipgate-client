@@ -9,6 +9,7 @@ import { Package, Users, TrendingUp } from "lucide-react"
 import { useAuthStore } from "@/store/auth"
 import { getAdminShipments } from "@/lib/shipping-api"
 import { getUsers } from "@/lib/auth-api"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface ShipmentSummary {
   _id?: string
@@ -27,6 +28,7 @@ interface ShipmentSummary {
 
 export default function AdminDashboard() {
   const token = useAuthStore((state) => state.token)
+  const user = useAuthStore((state) => state.user)
   const [shipments, setShipments] = useState<ShipmentSummary[]>([])
   const [customerCount, setCustomerCount] = useState(0)
   const [shipmentCount, setShipmentCount] = useState(0)
@@ -86,32 +88,68 @@ export default function AdminDashboard() {
     return `₦${numericValue.toLocaleString()}`
   }
 
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+
+    if (hour < 12) {
+      return { title: "Good morning", emoji: "☀️", subtitle: "A fresh start and plenty of work to keep moving." }
+    }
+
+    if (hour < 17) {
+      return { title: "Good afternoon", emoji: "🌤️", subtitle: "The afternoon is perfect for staying on top of operations." }
+    }
+
+    if (hour < 22) {
+      return { title: "Good evening", emoji: "🌙", subtitle: "You’ve made it through the day — let’s finish strong." }
+    }
+
+    return { title: "Good night", emoji: "🌌", subtitle: "The quiet hours are great for a quick review and reset." }
+  }
+
+  const greeting = getGreeting()
+
   return (
     <div className="space-y-6 max-w-6xl">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-        <p className="text-foreground/60">Manage shipments, customers, and operations</p>
+        <h1 className="text-3xl font-bold text-foreground">
+          {greeting.title}, <span className="font-bold text-foreground">{user?.fullName?.split(" ")[0]?.toLocaleUpperCase() || "Admin"}</span> {greeting.emoji}
+        </h1>
+        <p className="text-foreground/60">{greeting.subtitle}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon
-          return (
-            <Card key={stat.label}>
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-foreground/60">{stat.label}</p>
-                    <p className="text-2xl font-bold text-foreground mt-2">{stat.value}</p>
+        {loading
+          ? Array.from({ length: 3 }).map((_, index) => (
+              <Card key={index}>
+                <CardContent className="pt-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-8 w-20" />
+                    </div>
+                    <Skeleton className="h-10 w-10 rounded-lg" />
                   </div>
-                  <div className={`p-3 rounded-lg ${stat.color}`}>
-                    <Icon className="w-5 h-5" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
+                </CardContent>
+              </Card>
+            ))
+          : stats.map((stat) => {
+              const Icon = stat.icon
+              return (
+                <Card key={stat.label}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm text-foreground/60">{stat.label}</p>
+                        <p className="text-2xl font-bold text-foreground mt-2">{stat.value}</p>
+                      </div>
+                      <div className={`p-3 rounded-lg ${stat.color}`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
       </div>
 
       <Card>
@@ -139,8 +177,19 @@ export default function AdminDashboard() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="py-6 text-center text-foreground/60">
-                      Loading shipments...
+                    <td colSpan={6} className="py-6">
+                      <div className="space-y-3">
+                        {Array.from({ length: 4 }).map((_, index) => (
+                          <div key={index} className="flex items-center gap-3">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-4 w-20" />
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-4 w-20" />
+                            <Skeleton className="h-8 w-16" />
+                          </div>
+                        ))}
+                      </div>
                     </td>
                   </tr>
                 ) : shipments.length === 0 ? (

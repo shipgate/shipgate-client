@@ -209,30 +209,10 @@ export default function ShipmentsContent() {
                       <td className="py-3 px-4 font-semibold text-primary">
                         {shipment.pricing?.totalPrice ? `₦${shipment.pricing.totalPrice.toLocaleString()}` : shipment.totalAmount ? `₦${shipment.totalAmount.toLocaleString()}` : "Pending"}
                       </td>
-                      <td className="py-3 px-4 flex flex-wrap gap-2">
-                        <Link href={`/super-admin/shipments/${encodeURIComponent(shipment.shipmentNumber || shipment.id)}`}>
+                      <td className="py-3 px-4 font-semibold text-primary">
+                        <Link className="flex items-center justify-center" href={`/super-admin/shipments/${encodeURIComponent(shipment.shipmentNumber || shipment.id)}`}>
                           <Button variant="secondary" size="sm">View</Button>
                         </Link>
-                        {/* <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedShipmentForReceive(shipment)
-                            setShowReceivedModal(true)
-                          }}
-                        >
-                          Mark Received
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setShipmentToPrice(shipment.shipmentNumber || shipment.id)
-                            setShowPriceModal(true)
-                          }}
-                        >
-                          Set Price
-                        </Button> */}
                       </td>
                     </tr>
                   ))}

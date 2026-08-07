@@ -199,7 +199,7 @@ export default function ServicesPage() {
                     </div>
                   ))}
                 </ul>
-                <Link href="/support">
+                <Link href="/help">
                   <Button className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-lg font-semibold">
                     Learn More About Consolidation
                   </Button>

@@ -1,22 +1,80 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Package, Clock, CheckCircle2, AlertCircle } from "lucide-react"
+import { useAuthStore } from "@/store/auth"
+import { getAdminShipments } from "@/lib/shipping-api"
+
+interface PendingUpdateItem {
+  shipmentNumber: string
+  status: string
+  location: string
+  time: string
+}
 
 export default function StaffDashboard() {
-  const stats = [
-    { label: "Today's Updates", value: "24", icon: Package, color: "bg-blue-100 text-blue-700" },
-    { label: "Pending Updates", value: "8", icon: Clock, color: "bg-orange-100 text-orange-700" },
-    { label: "Completed", value: "156", icon: CheckCircle2, color: "bg-green-100 text-green-700" },
-    { label: "Alerts", value: "3", icon: AlertCircle, color: "bg-red-100 text-red-700" },
-  ]
+  const token = useAuthStore((state) => state.token)
+  const [pendingUpdates, setPendingUpdates] = useState<PendingUpdateItem[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const pendingUpdates = [
-    { trackingId: "SHP-2024-001", status: "In Airport Customs", location: "Shanghai", time: "2h ago" },
-    { trackingId: "SHP-2024-005", status: "At Sea", location: "Atlantic Ocean", time: "6h ago" },
-    { trackingId: "SHP-2024-009", status: "Port Departure", location: "Hong Kong", time: "12h ago" },
-  ]
+  useEffect(() => {
+    if (!token) {
+      setPendingUpdates([])
+      setLoading(false)
+      return
+    }
+
+    let active = true
+    setLoading(true)
+
+    getAdminShipments(token, 1, 10)
+      .then((response) => {
+        if (!active) return
+        const shipmentData = Array.isArray((response as any).data) ? (response as any).data : []
+        const nextUpdates = shipmentData
+          .filter((shipment: any) => {
+            const status = String(shipment.currentStatus || shipment.status || "").toUpperCase()
+            return !["COMPLETED", "CANCELLED"].includes(status)
+          })
+          .slice(0, 5)
+          .map((shipment: any) => ({
+            shipmentNumber: shipment.shipmentNumber || shipment.id || shipment._id || "Unknown",
+            status: shipment.currentStatus || shipment.status || "Pending",
+            location: shipment.destination || shipment.origin || shipment.singleShipment?.supplierAddress || "Awaiting update",
+            time: shipment.updatedAt || shipment.createdAt || "Recently updated",
+          }))
+
+        setPendingUpdates(nextUpdates)
+      })
+      .catch(() => {
+        if (!active) return
+        setPendingUpdates([])
+      })
+      .finally(() => {
+        if (!active) return
+        setLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [token])
+
+  const formatStatus = (status: string) =>
+    status.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
+
+  const formatTime = (value: string) => {
+    if (!value) return "Recently updated"
+
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return value
+
+    const diffHours = Math.max(1, Math.round((Date.now() - date.getTime()) / (1000 * 60 * 60)))
+    return `${diffHours}h ago`
+  }
 
   return (
     <div className="space-y-6">
@@ -78,18 +136,37 @@ export default function StaffDashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {pendingUpdates.map((update, i) => (
-              <div key={i} className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-mono text-primary font-semibold">{update.trackingId}</span>
-                  <Badge variant="outline">{update.status}</Badge>
+            {loading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="p-4 border border-border rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-6 w-24" />
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <Skeleton className="h-4 w-36" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-foreground/60">{update.location}</span>
-                  <span className="text-foreground/50">{update.time}</span>
+              ))
+            ) : pendingUpdates.length > 0 ? (
+              pendingUpdates.map((update, i) => (
+                <div key={i} className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-mono text-primary font-semibold">{update.shipmentNumber}</span>
+                    <Badge variant="outline">{formatStatus(update.status)}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-foreground/60">{update.location}</span>
+                    <span className="text-foreground/50">{formatTime(update.time)}</span>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-foreground/60">
+                No pending shipment updates available right now.
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>

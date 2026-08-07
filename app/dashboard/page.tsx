@@ -16,11 +16,11 @@ import { getCustomerWallet } from "@/lib/payments-api"
 
 export default function DashboardPage() {
   const [walletBalance, setWalletBalance] = useState(0.0)
-  const [shipmentCount] = useState(12)
   const [totalSpent] = useState(0.0)
   const token = useAuthStore((state) => state.token)
   const [shipments, setShipments] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [statsLoading, setStatsLoading] = useState(true)
   const [error, setError] = useState("")
   const [text, count] = useTypewriter({
     words: [
@@ -35,7 +35,7 @@ export default function DashboardPage() {
     deleteSpeed: 30,
   })
 
-  const {user} = useAuthStore()
+  const { user } = useAuthStore()
 
   const loadShipments = async () => {
     if (!token) return
@@ -64,9 +64,46 @@ export default function DashboardPage() {
   }
   
   useEffect(() => {
-    loadShipments()
-    loadWalletBalance()
+    const loadDashboardData = async () => {
+      if (!token) {
+        setShipments([])
+        setWalletBalance(0)
+        setStatsLoading(false)
+        return
+      }
+
+      setError("")
+      setStatsLoading(true)
+
+      try {
+        await Promise.all([loadShipments(), loadWalletBalance()])
+      } finally {
+        setStatsLoading(false)
+      }
+    }
+
+    loadDashboardData()
   }, [token])
+
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+
+    if (hour < 12) {
+      return { title: "Good morning", emoji: "☀️", subtitle: "Let’s make today feel easy and productive." }
+    }
+
+    if (hour < 17) {
+      return { title: "Good afternoon", emoji: "🌤️", subtitle: "You’re right on time to keep things moving and smiling." }
+    }
+
+    if (hour < 22) {
+      return { title: "Good evening", emoji: "🌙", subtitle: "A calm evening is perfect for checking in and staying ahead." }
+    }
+
+    return { title: "Good night", emoji: "🌌", subtitle: "The quiet hours are ideal for a quick review before rest." }
+  }
+
+  const greeting = getGreeting()
 
   return (
     <div className="space-y-6">
@@ -76,8 +113,10 @@ export default function DashboardPage() {
         initial={{x: -20, opacity: 0}}
         animate={{x:0, opacity: 1}}
         >
-          <h1 className="text-3xl font-medium text-gray-700 mb-2">Good Morning, <span className="font-bold text-foreground">{user?.fullName.split(" ")[0].toLocaleUpperCase()}</span></h1>
-          <p className="text-foreground/60 text-sm md:text-base">{text}</p>
+          <h1 className="text-3xl font-medium text-gray-700 mb-2">
+            {greeting.title}, <span className="font-bold text-foreground">{user?.fullName?.split(" ")[0]?.toLocaleUpperCase() || "there"}</span> {greeting.emoji}
+          </h1>
+          <p className="text-foreground/60 text-sm md:text-base">{greeting.subtitle}</p>
         </motion.div>
         <motion.a 
         href="/dashboard/add-shipment"
@@ -98,7 +137,7 @@ export default function DashboardPage() {
       viewport={{once: true}}
       transition={{duration: 0.5}}
       >
-        <QuickStats walletBalance={walletBalance} shipmentCount={shipments.length} totalSpent={totalSpent} />
+        <QuickStats walletBalance={walletBalance} shipmentCount={shipments.length} totalSpent={totalSpent} loading={statsLoading || loading} />
       </motion.div>
 
       {/* Wallet Card and Recent Shipments */}

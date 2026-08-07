@@ -1,17 +1,17 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Package, TrendingUp, DollarSign } from "lucide-react"
-import { motion } from "motion/react"
-
 
 interface QuickStatsProps {
   walletBalance: number
   shipmentCount: number
   totalSpent: number
+  loading?: boolean
 }
 
-export function QuickStats({ walletBalance, shipmentCount, totalSpent }: QuickStatsProps) {
+export function QuickStats({ walletBalance, shipmentCount, totalSpent, loading = false }: QuickStatsProps) {
   const stats = [
     {
       icon: DollarSign,
@@ -35,6 +35,26 @@ export function QuickStats({ walletBalance, shipmentCount, totalSpent }: QuickSt
       bgColor: "bg-primary/10",
     },
   ]
+
+  if (loading) {
+    return (
+      <div className="grid md:grid-cols-3 gap-6">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <Card key={index}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-7 w-24" />
+                </div>
+                <Skeleton className="h-12 w-12 rounded-lg" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="grid md:grid-cols-3 gap-6">

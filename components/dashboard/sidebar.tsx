@@ -51,13 +51,11 @@ const adminMenuItems = [
 const staffMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/staff/dashboard" },
   { icon: MapPin, label: "Update Status", href: "/staff/status-updates" },
-  { icon: Settings, label: "Settings", href: "/staff/settings" },
 ]
 
 const courierMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/courier/dashboard" },
   { icon: MapPin, label: "Update Delivery", href: "/courier/update-delivery" },
-  { icon: Settings, label: "Settings", href: "/courier/settings" },
 ]
 
 export function Sidebar({userRole = "customer", collapsed = false}: {userRole?: string, collapsed?: boolean}) {

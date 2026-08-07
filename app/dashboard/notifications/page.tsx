@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
@@ -30,6 +31,7 @@ const getNotificationIcon = (type: string) => {
 
 export default function NotificationsPage() {
   const token = useAuthStore((state) => state.token)
+  const router = useRouter()
   const [shipmentNotifs, setShipmentNotifs] = useState<NotificationItem[]>([])
   const [accountNotifs, setAccountNotifs] = useState<NotificationItem[]>([])
   const [announcementNotifs, setAnnouncementNotifs] = useState<NotificationItem[]>([])
@@ -73,6 +75,12 @@ export default function NotificationsPage() {
     }
   }, [token])
 
+  const emitNotificationsUpdated = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("notifications:updated"))
+    }
+  }
+
   const markAsRead = async (notification: NotificationItem, category: NotificationCategory) => {
     if (!token || notification.read) return
 
@@ -88,6 +96,8 @@ export default function NotificationsPage() {
       } else {
         setAnnouncementNotifs(updater)
       }
+
+      emitNotificationsUpdated()
     } catch (err) {
       console.error(err)
     }
@@ -107,9 +117,24 @@ export default function NotificationsPage() {
       setShipmentNotifs(markAll)
       setAccountNotifs(markAll)
       setAnnouncementNotifs(markAll)
+      emitNotificationsUpdated()
     } catch (err) {
       console.error(err)
     }
+  }
+
+  const handleNotificationClick = async (notification: NotificationItem, category: NotificationCategory) => {
+    if (!notification.read) {
+      await markAsRead(notification, category)
+    }
+
+    const shipmentRef = notification.shipmentNumber || notification.shipmentId
+    if (notification.type === "SHIPMENT" && shipmentRef) {
+      router.push(`/dashboard/shipments/${encodeURIComponent(String(shipmentRef))}`)
+      return
+    }
+
+    router.push("/dashboard/notifications")
   }
 
   const NotificationItemCard = ({
@@ -121,7 +146,7 @@ export default function NotificationsPage() {
   }) => (
     <Card
       className="mb-3 hover:shadow-md transition-shadow cursor-pointer"
-      onClick={() => markAsRead(notification, category)}
+      onClick={() => handleNotificationClick(notification, category)}
     >
       <CardContent className="pt-4">
         <div className="flex gap-4">

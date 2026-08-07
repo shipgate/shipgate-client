@@ -6,7 +6,7 @@ import { Bell, Menu, X, PanelLeftOpen } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { useAuthStore } from "@/store/auth"
-import { getNotifications, getUnreadNotificationCount, type NotificationItem } from "@/lib/notifications-api"
+import { getNotifications, getUnreadNotificationCount, markNotificationAsRead, type NotificationItem } from "@/lib/notifications-api"
 
 export function DashboardHeader({
   setmobileMenuOpen,
@@ -39,30 +39,64 @@ export function DashboardHeader({
   }
 
   useEffect(() => {
-    if (!token) {
-      setNotifications([])
-      setUnreadCount(0)
+    const refreshNotifications = () => {
+      if (!token) {
+        setNotifications([])
+        setUnreadCount(0)
+        return
+      }
+
+      let isMounted = true
+
+      Promise.all([getNotifications({ limit: 5 }, token), getUnreadNotificationCount(token)])
+        .then(([notificationRes, unreadRes]) => {
+          if (!isMounted) return
+          setNotifications(notificationRes.data ?? [])
+          setUnreadCount(unreadRes.unreadCount ?? 0)
+        })
+        .catch(() => {
+          if (!isMounted) return
+          setNotifications([])
+          setUnreadCount(0)
+        })
+
+      return () => {
+        isMounted = false
+      }
+    }
+
+    const cleanup = refreshNotifications()
+    const handleNotificationsUpdated = () => {
+      refreshNotifications()
+    }
+
+    window.addEventListener("notifications:updated", handleNotificationsUpdated)
+
+    return () => {
+      cleanup?.()
+      window.removeEventListener("notifications:updated", handleNotificationsUpdated)
+    }
+  }, [token])
+
+  const navigateToNotification = async (notification: NotificationItem) => {
+    if (token && !notification.read) {
+      try {
+        await markNotificationAsRead(notification._id, token)
+        setNotifications((current) => current.map((item) => (item._id === notification._id ? { ...item, read: true } : item)))
+        setUnreadCount((current) => Math.max(0, current - 1))
+      } catch (error) {
+        console.error(error)
+      }
+    }
+
+    const shipmentRef = notification.shipmentNumber || notification.shipmentId
+    if (notification.type === "SHIPMENT" && shipmentRef) {
+      router.push(`/dashboard/shipments/${encodeURIComponent(String(shipmentRef))}`)
       return
     }
 
-    let isMounted = true
-
-    Promise.all([getNotifications({ limit: 5 }, token), getUnreadNotificationCount(token)])
-      .then(([notificationRes, unreadRes]) => {
-        if (!isMounted) return
-        setNotifications(notificationRes.data ?? [])
-        setUnreadCount(unreadRes.unreadCount ?? 0)
-      })
-      .catch(() => {
-        if (!isMounted) return
-        setNotifications([])
-        setUnreadCount(0)
-      })
-
-    return () => {
-      isMounted = false
-    }
-  }, [token])
+    router.push("/dashboard/notifications")
+  }
 
   return (
     <header className="bg-[#f6f7fa] sticky top-0 z-40">
@@ -118,7 +152,7 @@ export function DashboardHeader({
                       )}
                       onClick={() => {
                         setNotificationsOpen(false)
-                        router.push("/dashboard/notifications")
+                        navigateToNotification(notification)
                       }}
                     >
                       <div className="flex gap-3">
