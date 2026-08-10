@@ -142,7 +142,9 @@ export function ProfilePage({ portalLabel }: { portalLabel: string }) {
               <div>
                 <CardTitle>{formData.fullName || "Your Name"}</CardTitle>
                 <CardDescription>{formData.email || "you@example.com"}</CardDescription>
-                <CardDescription>Customer ID: {customerId|| "#######"}</CardDescription>
+                {customerId && 
+                  <CardDescription>Customer ID: {customerId|| "#######"}</CardDescription>
+                }
               </div>
             </div>
 
