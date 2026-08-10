@@ -227,6 +227,7 @@ export default function AdminShipmentDetailsPage() {
                     <p className="text-sm font-medium text-foreground">Customer</p>
                     <p className="text-foreground">{shipment.customerId?.fullName || shipment.customer?.fullName || "Unknown"}</p>
                     <p className="text-foreground/60 text-sm">{shipment.customerId?.email || shipment.customer?.email || "No email"}</p>
+                    <p className="text-foreground/60 text-sm">Customer ID: {shipment.customerId?.customerId || shipment.customer?.customerId || "No phone"}</p>
                   </div>
 
                   {shipment.shipmentType === "SINGLE" && shipment.singleShipment ? (

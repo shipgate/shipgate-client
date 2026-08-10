@@ -28,7 +28,7 @@ const emptyForm: ProfileFormData = {
 
 export function ProfilePage({ portalLabel }: { portalLabel: string }) {
   const { token, user, setAuth } = useAuthStore()
-
+  const [customerId, setCustomerId] = useState<String>()
   const [formData, setFormData] = useState<ProfileFormData>(emptyForm)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -57,6 +57,8 @@ export function ProfilePage({ portalLabel }: { portalLabel: string }) {
         phone: profile.phone || "",
         address: profile.address || "",
       })
+
+      setCustomerId(profile.customerId)
 
       if (user) {
         setAuth({ ...user, ...profile }, token)
@@ -140,6 +142,7 @@ export function ProfilePage({ portalLabel }: { portalLabel: string }) {
               <div>
                 <CardTitle>{formData.fullName || "Your Name"}</CardTitle>
                 <CardDescription>{formData.email || "you@example.com"}</CardDescription>
+                <CardDescription>Customer ID: {customerId|| "#######"}</CardDescription>
               </div>
             </div>
 

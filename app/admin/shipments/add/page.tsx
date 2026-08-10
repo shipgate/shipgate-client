@@ -427,24 +427,41 @@ export default function AdminAddShipmentPage() {
                     placeholder="Supplier Co."
                     value={singleShipment.supplierName}
                     onChange={handleSingleShipmentChange}
-                    required
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Company Name</label>
-                  <Input name="companyName" placeholder="Company" value={singleShipment.companyName} onChange={handleSingleShipmentChange} />
+                  <label className="text-sm font-medium text-foreground">Supplier Phone</label>
+                  <Input
+                    name="phoneNumber"
+                    type='tel'
+                    placeholder="+86 138 0000 0000"
+                    value={singleShipment.phoneNumber}
+                    onChange={handleSingleShipmentChange}
+                    maxLength={20}
+                    pattern="^\+?[1-9]\d{7,14}$"
+                    title="Enter a valid phone number (8–15 digits, optional + prefix)"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Phone Number *</label>
-                  <Input name="phoneNumber" placeholder="+234..." value={singleShipment.phoneNumber} onChange={handleSingleShipmentChange} required />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Email *</label>
-                  <Input type="email" name="email" placeholder="supplier@example.com" value={singleShipment.email} onChange={handleSingleShipmentChange} required />
+                  <label className="text-sm font-medium text-foreground">Supplier Email</label>
+                  <Input
+                    name="email"
+                    placeholder="supplier@example.com"
+                    value={singleShipment.email}
+                    onChange={handleSingleShipmentChange}
+                    maxLength={100}
+                    pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+                    title="Enter a valid email address"
+                  />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium text-foreground">Supplier Address</label>
-                  <Input name="supplierAddress" placeholder="Address" value={singleShipment.supplierAddress} onChange={handleSingleShipmentChange} />
+                  <Input
+                    name="supplierAddress"
+                    placeholder="Shanghai, China"
+                    value={singleShipment.supplierAddress}
+                    onChange={handleSingleShipmentChange}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -467,17 +484,22 @@ export default function AdminAddShipmentPage() {
                     ) : null}
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Input placeholder="Parcel ID" value={parcel.parcelId} onChange={(e) => handleParcelChange(index, "parcelId", e.target.value)} />
-                    <Input placeholder="Item Category" value={parcel.itemCategory} onChange={(e) => handleParcelChange(index, "itemCategory", e.target.value)} />
-                    <Input type="number" placeholder="Amount" value={parcel.amount} onChange={(e) => handleParcelChange(index, "amount", e.target.value)} />
-                    <Input placeholder="Supplier Name" value={parcel.supplierName} onChange={(e) => handleParcelChange(index, "supplierName", e.target.value)} />
-                    <Input placeholder="Company Name" value={parcel.companyName} onChange={(e) => handleParcelChange(index, "companyName", e.target.value)} />
-                    <Input placeholder="Phone Number" value={parcel.phoneNumber} onChange={(e) => handleParcelChange(index, "phoneNumber", e.target.value)} />
-                    <Input type="email" placeholder="Email" value={parcel.email} onChange={(e) => handleParcelChange(index, "email", e.target.value)} />
-                    <Input type="number" placeholder="Weight" value={parcel.weight} onChange={(e) => handleParcelChange(index, "weight", e.target.value)} />
-                    <Input type="number" placeholder="Length" value={parcel.length} onChange={(e) => handleParcelChange(index, "length", e.target.value)} />
-                    <Input type="number" placeholder="Width" value={parcel.width} onChange={(e) => handleParcelChange(index, "width", e.target.value)} />
-                    <Input type="number" placeholder="Height" value={parcel.height} onChange={(e) => handleParcelChange(index, "height", e.target.value)} />
+                    <Input
+                      placeholder="Parcel ID"
+                      value={parcel.parcelId}
+                      onChange={(e) => handleParcelChange(index, "parcelId", e.target.value)}
+                    />
+                    <Input
+                      placeholder="Item Category"
+                      value={parcel.itemCategory}
+                      onChange={(e) => handleParcelChange(index, "itemCategory", e.target.value)}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Item Quantity"
+                      value={parcel.amount}
+                      onChange={(e) => handleParcelChange(index, "amount", e.target.value)}
+                    />
                   </div>
                 </div>
               ))}

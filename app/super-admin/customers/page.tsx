@@ -183,6 +183,7 @@ export default function ManageCustomers() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
+                  <th className="text-left py-3 px-4 font-semibold">ID</th>
                   <th className="text-left py-3 px-4 font-semibold">Name</th>
                   <th className="text-left py-3 px-4 font-semibold">Email</th>
                   <th className="text-left py-3 px-4 font-semibold">Phone</th>
@@ -193,6 +194,7 @@ export default function ManageCustomers() {
               <tbody>
                 {customers.map((customer) => (
                   <tr key={customer._id} className="border-b border-border hover:bg-muted/50">
+                    <td className="py-3 px-4 font-semibold">#{customer.customerId}</td>
                     <td className="py-3 px-4 font-semibold">{customer.fullName}</td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2 text-foreground/70">

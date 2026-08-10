@@ -16,6 +16,7 @@ export interface AuthUser {
   employeeId?: string
   adminLevel?: number
   department?: string
+  customerId?: string
 }
 
 interface AuthState {
