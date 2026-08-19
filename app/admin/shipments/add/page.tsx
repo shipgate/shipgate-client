@@ -307,7 +307,7 @@ export default function AdminAddShipmentPage() {
               <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
                 <div>
                   <p className="text-sm font-semibold text-foreground">{selectedCustomer.fullName}</p>
-                  <p className="text-xs text-foreground/60">ID: {selectedCustomer._id}</p>
+                  <p className="text-xs text-foreground/60">ID: {selectedCustomer.customerId}</p>
                 </div>
                 <Button type="button" variant="ghost" size="sm" onClick={handleClearCustomer}>
                   <X className="w-4 h-4" />
